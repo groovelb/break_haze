@@ -176,6 +176,7 @@ const App: React.FC = () => {
                   onPlay={handlePlay}
                   onStop={handleStop}
                   activeId={activeId}
+                  activeColors={activeColors}
                />
              ) : (
                <GridView
