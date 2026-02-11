@@ -1,7 +1,8 @@
-import React, { useLayoutEffect, useRef, useMemo } from 'react';
+import React, { useLayoutEffect, useRef, useMemo, useCallback } from 'react';
 import { EnrichedAlbum } from '../types';
 import AlbumCard from './AlbumCard';
 import { ColorPalette } from '../utils/color-extract';
+import { getVerticalOffset, classifyGenreZone, ZONE_COLORS } from '../utils/genre';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -27,8 +28,6 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
 
     const getScrollDistance = () => Math.max(0, track.scrollWidth - window.innerWidth);
 
-    if (getScrollDistance() <= 0) return;
-
     ctxRef.current = gsap.context(() => {
       gsap.to(track, {
         x: () => -getScrollDistance(),
@@ -45,12 +44,12 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
     });
 
     // Refresh after layout stabilizes (CSS/images/fonts)
-    const rafId = requestAnimationFrame(() => {
-      ScrollTrigger.refresh();
-    });
+    const rafId = requestAnimationFrame(() => ScrollTrigger.refresh());
+    const timer = setTimeout(() => ScrollTrigger.refresh(), 500);
 
     return () => {
       cancelAnimationFrame(rafId);
+      clearTimeout(timer);
       ctxRef.current?.revert();
       ctxRef.current = null;
     };
@@ -62,32 +61,22 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
     return [...new Set<number>(years)].sort((a, b) => a - b);
   }, [albums]);
 
-  // Map year -> percent position (index-based, evenly distributed)
-  const yearToPercent = useMemo(() => {
-    const map: Record<number, number> = {};
-    const count = activeYears.length;
-    if (count <= 1) {
-      activeYears.forEach(y => map[y] = 50);
-    } else {
-      activeYears.forEach((y, i) => {
-        map[y] = (i / (count - 1)) * 100;
-      });
-    }
-    return map;
-  }, [activeYears]);
+  // Per-album percent position (index-based, evenly distributed)
+  const albumPercent = useCallback(
+    (index: number) => albums.length <= 1 ? 50 : (index / (albums.length - 1)) * 100,
+    [albums.length]
+  );
 
-  // Compute stagger index for albums sharing the same year
-  const albumsWithStagger = useMemo(() => {
-    const yearCount: Record<number, number> = {};
-    return albums.map((album) => {
-      const idx = yearCount[album.year] || 0;
-      yearCount[album.year] = idx + 1;
-      return { album, staggerIndex: idx };
+  // Year tick positions — placed at the first album of each year
+  const yearTickPositions = useMemo(() => {
+    return activeYears.map((year) => {
+      const firstIdx = albums.findIndex(a => a.year === year);
+      return { year, percent: albumPercent(firstIdx) };
     });
-  }, [albums]);
+  }, [activeYears, albums, albumPercent]);
 
   return (
-    <section ref={sectionRef} className="relative w-full h-screen overflow-hidden flex flex-col justify-center">
+    <section ref={sectionRef} className="relative w-full h-screen overflow-hidden">
 
       {/* Background Parallax Years (Ambient) */}
       <div className="absolute top-1/4 left-0 w-[400vw] h-1/2 flex items-center pointer-events-none opacity-10 select-none z-0">
@@ -98,20 +87,67 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
          ))}
       </div>
 
-      {/* Horizontal Track (moved by ScrollTrigger) */}
-      <div
-        ref={trackRef}
-        className="flex items-center h-[600px] px-[10vw] relative z-10 will-change-transform"
-      >
-        {albums.map((album) => (
-          <AlbumCard
-            key={album.id}
-            album={album}
-            onPlay={onPlay}
-            onStop={onStop}
-            activeId={activeId}
-          />
-        ))}
+      {/* Genre Zone Gradients */}
+      <div className="absolute inset-0 z-[5] pointer-events-none">
+        <div className="absolute top-0 left-0 w-full h-2/5" style={{ background: 'linear-gradient(to bottom, rgba(36,0,70,0.12), transparent)' }} />
+        <div className="absolute bottom-40 left-0 w-full h-2/5" style={{ background: 'linear-gradient(to top, rgba(204,255,0,0.04), transparent)' }} />
+      </div>
+
+      {/* ═══ Centered Content Wrapper (absolute positioned, centered with top+translate) ═══ */}
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[800px]">
+
+        {/* Y-Axis: Frequency Spectrum Indicator */}
+        <div className="absolute left-5 top-0 bottom-0 z-20 pointer-events-none">
+          {/* Vertical gradient bar */}
+          <div className="absolute top-[60px] bottom-[360px] w-px" style={{ background: 'linear-gradient(to bottom, #a855f7 0%, rgba(255,255,255,0.15) 50%, #ccff00 100%)' }} />
+
+          {/* Cloud zone label */}
+          <div className="absolute flex items-center gap-2" style={{ top: 100 }}>
+            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#a855f7', boxShadow: '0 0 6px rgba(168,85,247,0.5)' }} />
+            <span className="text-[8px] font-mono tracking-[0.2em] whitespace-nowrap" style={{ color: 'rgba(168,85,247,0.5)' }}>CLOUD</span>
+          </div>
+
+          {/* Crossover zone label */}
+          <div className="absolute flex items-center gap-2" style={{ top: 250 }}>
+            <div className="w-1.5 h-1.5 rounded-full bg-white/30" />
+            <span className="text-[8px] font-mono tracking-[0.2em] text-white/25 whitespace-nowrap">CROSS</span>
+          </div>
+
+          {/* Thunder zone label */}
+          <div className="absolute flex items-center gap-2" style={{ top: 400 }}>
+            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#ccff00', boxShadow: '0 0 6px rgba(204,255,0,0.4)' }} />
+            <span className="text-[8px] font-mono tracking-[0.2em] whitespace-nowrap" style={{ color: 'rgba(204,255,0,0.4)' }}>THUNDER</span>
+          </div>
+
+          {/* Axis title */}
+          <div className="absolute -left-1 top-[200px]">
+            <span className="text-[7px] font-mono tracking-[0.4em] text-white/10 -rotate-90 block whitespace-nowrap origin-top-left">FREQUENCY</span>
+          </div>
+        </div>
+
+        {/* Horizontal Track (moved by ScrollTrigger) */}
+        <div
+          ref={trackRef}
+          className="flex items-start h-full px-[10vw] relative z-10 will-change-transform"
+        >
+          {albums.map((album) => {
+            const yOffset = getVerticalOffset(album);
+            return (
+              <div
+                key={album.id}
+                className="flex-shrink-0 w-72 md:w-96 mx-8"
+                style={{ transform: `translateY(${yOffset}px)` }}
+              >
+                <AlbumCard
+                  album={album}
+                  onPlay={onPlay}
+                  onStop={onStop}
+                  activeId={activeId}
+                />
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {/* Instructions */}
@@ -121,32 +157,31 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
       </div>
 
       {/* BOTTOM VISUAL TIMELINE */}
-      <div className="absolute bottom-0 left-0 w-full h-52 bg-gradient-to-t from-black from-60% via-black/70 to-transparent z-40 flex items-end px-10 pb-4 select-none pointer-events-none">
-          <div className="relative w-full h-32">
+      <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-t from-black from-60% via-black/70 to-transparent z-40 flex items-end px-10 pb-4 select-none pointer-events-none">
+          <div className="relative w-full h-24">
 
               {/* Timeline Line */}
               <div className="absolute bottom-6 left-0 w-full h-px bg-gray-600" />
 
               {/* Year Ticks */}
-              {activeYears.map((year) => {
-                  const percent = yearToPercent[year];
-                  return (
-                      <div
-                        key={`tick-${year}`}
-                        className="absolute bottom-0 flex flex-col items-center -translate-x-1/2"
-                        style={{ left: `${percent}%` }}
-                      >
-                          <span className="text-[10px] font-mono text-gray-400">{year}</span>
-                      </div>
-                  );
-              })}
+              {yearTickPositions.map(({ year, percent }) => (
+                  <div
+                    key={`tick-${year}`}
+                    className="absolute bottom-0 flex flex-col items-center -translate-x-1/2"
+                    style={{ left: `${percent}%` }}
+                  >
+                      <span className="text-[10px] font-mono text-gray-500">{year}</span>
+                  </div>
+              ))}
 
-              {/* Album Markers with Labels */}
-              {albumsWithStagger.map(({ album, staggerIndex }) => {
-                  const percent = yearToPercent[album.year];
+              {/* Album Dots */}
+              {albums.map((album, index) => {
+                  const percent = albumPercent(index);
                   const isActive = activeId === album.id;
-                  const connectorHeight = 16 + staggerIndex * 18;
+                  const zone = classifyGenreZone(album);
+                  const zoneColor = ZONE_COLORS[zone];
                   const accentColor = isActive && activeColors ? activeColors.primary : undefined;
+                  const connectorHeight = zone === 'cloud' ? 40 : zone === 'crossover' ? 28 : 16;
 
                   return (
                       <div
@@ -154,39 +189,40 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
                         className="absolute -translate-x-1/2"
                         style={{ left: `${percent}%`, bottom: 24 }}
                       >
-                          {/* Dot on timeline */}
+                          {/* Dot */}
                           <div
-                            className={`rounded-full transition-all duration-300 mx-auto ${isActive ? 'w-2.5 h-2.5' : 'w-2 h-2 bg-gray-400'}`}
-                            style={isActive ? {
-                              backgroundColor: accentColor || '#fff',
-                              boxShadow: `0 0 12px ${accentColor || 'rgba(255,255,255,0.6)'}`,
-                            } : undefined}
-                          />
-
-                          {/* Connector line going up */}
-                          <div
-                            className={`w-px mx-auto transition-all duration-300 ${isActive ? '' : 'bg-gray-600'}`}
+                            className={`rounded-full transition-all duration-300 mx-auto ${isActive ? 'w-2.5 h-2.5' : 'w-1.5 h-1.5'}`}
                             style={{
-                              height: connectorHeight,
-                              marginTop: -2 - connectorHeight - 8,
-                              ...(isActive ? { backgroundColor: accentColor ? `${accentColor}` : undefined, opacity: 0.6 } : {}),
+                              backgroundColor: isActive ? (accentColor || '#fff') : zoneColor.primary,
+                              opacity: isActive ? 1 : 0.5,
+                              ...(isActive ? { boxShadow: `0 0 12px ${accentColor || zoneColor.glow}` } : {}),
                             }}
                           />
 
-                          {/* Label */}
-                          <div
-                            className={`absolute left-1/2 -translate-x-1/2 whitespace-nowrap transition-all duration-300 ${isActive ? '' : 'text-gray-400'}`}
-                            style={{
-                              bottom: 10 + connectorHeight,
-                              ...(isActive ? { color: accentColor || '#facc15' } : {}),
-                            }}
-                          >
-                              <p className="text-[9px] font-mono leading-tight text-center">{album.artist}</p>
-                              <p
-                                className={`text-[8px] font-mono leading-tight text-center ${isActive ? '' : 'text-gray-500'}`}
-                                style={isActive ? { color: '#fff' } : undefined}
-                              >{album.title}</p>
-                          </div>
+                          {/* Connector + Label — active only */}
+                          {isActive && (
+                            <>
+                              <div
+                                className="w-px mx-auto"
+                                style={{
+                                  height: connectorHeight,
+                                  marginTop: -2 - connectorHeight - 8,
+                                  backgroundColor: accentColor || zoneColor.primary,
+                                  opacity: 0.6,
+                                }}
+                              />
+                              <div
+                                className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap"
+                                style={{
+                                  bottom: 10 + connectorHeight,
+                                  color: accentColor || '#facc15',
+                                }}
+                              >
+                                  <p className="text-[9px] font-mono leading-tight text-center">{album.artist}</p>
+                                  <p className="text-[8px] font-mono leading-tight text-center text-white">{album.title}</p>
+                              </div>
+                            </>
+                          )}
                       </div>
                   );
               })}

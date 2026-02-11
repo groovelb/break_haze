@@ -1,6 +1,73 @@
 import { ArtistGroup } from './types';
 
 export const ALBUMS_DATA: ArtistGroup[] = [
+  // ═══════════════════════════════════════════
+  //  PRE-1991 — PRECURSORS & ROOTS
+  // ═══════════════════════════════════════════
+  {
+    "artist": "Bomb the Bass",
+    "genre": "Sample-Based Breakbeat",
+    "genre_style": "thunder",
+    "albums": [
+      {
+        "year": 1988,
+        "title": "Into the Dragon",
+        "key_track": "Beat Dis",
+        "search_query": "Bomb the Bass Beat Dis",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Coldcut",
+    "genre": "Sample-Based Breakbeat",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 1989,
+        "title": "What's That Noise?",
+        "key_track": "Stop This Crazy Thing",
+        "search_query": "Coldcut Stop This Crazy Thing",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Soul II Soul",
+    "genre": "Proto-Trip-Hop",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 1989,
+        "title": "Club Classics Vol. One",
+        "key_track": "Back to Life",
+        "search_query": "Soul II Soul Back to Life",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Beats International",
+    "genre": "Breakbeat",
+    "genre_style": "thunder",
+    "albums": [
+      {
+        "year": 1990,
+        "title": "Let Them Eat Bingo",
+        "key_track": "Dub Be Good to Me",
+        "search_query": "Beats International Dub Be Good to Me",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+
+  // ═══════════════════════════════════════════
+  //  CORE ERA — 1991–2008
+  // ═══════════════════════════════════════════
   {
     "artist": "Massive Attack",
     "genre": "Trip-hop",
@@ -37,6 +104,14 @@ export const ALBUMS_DATA: ArtistGroup[] = [
         "search_query": "Massive Attack 100th Window",
         "artworkUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music118/v4/f5/2d/dc/f52ddc7e-5d19-c77d-e6bd-442af020b798/00724358123951.rgb.jpg/600x600bb.jpg",
         "itunesLink": "https://music.apple.com/us/album/100th-window/714756948?uo=4"
+      },
+      {
+        "year": 2010,
+        "title": "Heligoland",
+        "key_track": "Atlas Air",
+        "search_query": "Massive Attack Heligoland",
+        "artworkUrl": null,
+        "itunesLink": null
       }
     ]
   },
@@ -99,6 +174,14 @@ export const ALBUMS_DATA: ArtistGroup[] = [
         "search_query": "Prodigy Fat of the Land",
         "artworkUrl": null,
         "itunesLink": null
+      },
+      {
+        "year": 2018,
+        "title": "No Tourists",
+        "key_track": "Need Some1",
+        "search_query": "The Prodigy Need Some1",
+        "artworkUrl": null,
+        "itunesLink": null
       }
     ]
   },
@@ -138,6 +221,14 @@ export const ALBUMS_DATA: ArtistGroup[] = [
         "search_query": "Chemical Brothers Come with Us",
         "artworkUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/52/02/8e/52028ed3-f0d8-e341-3126-dcfaf25a8bd1/00724381189559.rgb.jpg/600x600bb.jpg",
         "itunesLink": "https://music.apple.com/us/album/come-with-us/721206816?uo=4"
+      },
+      {
+        "year": 2019,
+        "title": "No Geography",
+        "key_track": "Got to Keep On",
+        "search_query": "Chemical Brothers Got to Keep On",
+        "artworkUrl": null,
+        "itunesLink": null
       }
     ]
   },
@@ -160,6 +251,36 @@ export const ALBUMS_DATA: ArtistGroup[] = [
         "key_track": "Christiansands",
         "search_query": "Tricky Pre-Millennium Tension",
         "artworkUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/d2/52/db/d252dbc9-a595-33ad-ce59-8e499a3e6f09/00731452430229.rgb.jpg/600x600bb.jpg",
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Leftfield",
+    "genre": "Progressive Breakbeat",
+    "genre_style": "thunder",
+    "albums": [
+      {
+        "year": 1995,
+        "title": "Leftism",
+        "key_track": "Open Up",
+        "search_query": "Leftfield Open Up",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Nightmares on Wax",
+    "genre": "Downtempo",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 1995,
+        "title": "Smokers Delight",
+        "key_track": "Nights Introlude",
+        "search_query": "Nightmares on Wax Nights Introlude",
+        "artworkUrl": null,
         "itunesLink": null
       }
     ]
@@ -196,6 +317,21 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     ]
   },
   {
+    "artist": "Hooverphonic",
+    "genre": "Trip-hop / Dream Pop",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 1996,
+        "title": "A New Stereophonic Sound Spectacular",
+        "key_track": "2Wicky",
+        "search_query": "Hooverphonic 2Wicky",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
     "artist": "DJ Shadow",
     "genre": "Trip-hop / Instrumental",
     "genre_style": "cloud",
@@ -215,6 +351,14 @@ export const ALBUMS_DATA: ArtistGroup[] = [
         "search_query": "DJ Shadow Private Press",
         "artworkUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/35/43/00/35430056-b9c5-f29c-e4bc-011393f74515/5400863103736_cover.jpg/600x600bb.jpg",
         "itunesLink": "https://music.apple.com/us/album/the-private-press-expanded-edition/1660807450?uo=4"
+      },
+      {
+        "year": 2016,
+        "title": "The Mountain Will Fall",
+        "key_track": "Nobody Speak",
+        "search_query": "DJ Shadow Nobody Speak",
+        "artworkUrl": null,
+        "itunesLink": null
       }
     ]
   },
@@ -238,6 +382,21 @@ export const ALBUMS_DATA: ArtistGroup[] = [
         "search_query": "Crystal Method Tweekend",
         "artworkUrl": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/a1/b4/1c/a1b41ce5-6d67-8dc9-f7cf-4f95f8907ba5/00606949307325.rgb.jpg/600x600bb.jpg",
         "itunesLink": "https://music.apple.com/us/album/tweekend/1443542864?uo=4"
+      }
+    ]
+  },
+  {
+    "artist": "Amon Tobin",
+    "genre": "Breakbeat / Trip-Hop",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 1997,
+        "title": "Bricolage",
+        "key_track": "One Day",
+        "search_query": "Amon Tobin Bricolage",
+        "artworkUrl": null,
+        "itunesLink": null
       }
     ]
   },
@@ -288,6 +447,51 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     ]
   },
   {
+    "artist": "Lo Fidelity Allstars",
+    "genre": "Big Beat",
+    "genre_style": "thunder",
+    "albums": [
+      {
+        "year": 1998,
+        "title": "How to Operate with a Blown Mind",
+        "key_track": "Battleflag",
+        "search_query": "Lo Fidelity Allstars Battleflag",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Air",
+    "genre": "Downtempo / Electronic",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 1998,
+        "title": "Moon Safari",
+        "key_track": "Sexy Boy",
+        "search_query": "Air Sexy Boy",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Kruder & Dorfmeister",
+    "genre": "Downtempo / Dub",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 1998,
+        "title": "The K&D Sessions",
+        "key_track": "Bug Powder Dust",
+        "search_query": "Kruder Dorfmeister Bug Powder Dust",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
     "artist": "Propellerheads",
     "genre": "Big Beat",
     "genre_style": "thunder",
@@ -318,6 +522,21 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     ]
   },
   {
+    "artist": "Lamb",
+    "genre": "Trip-hop / Drum and Bass",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 1999,
+        "title": "Fear of Fours",
+        "key_track": "Gorecki",
+        "search_query": "Lamb Gorecki",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
     "artist": "Groove Armada",
     "genre": "Big Beat / House",
     "genre_style": "thunder",
@@ -341,6 +560,21 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     ]
   },
   {
+    "artist": "Thievery Corporation",
+    "genre": "Downtempo / Trip-Hop",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 2000,
+        "title": "The Mirror Conspiracy",
+        "key_track": "Lebanese Blonde",
+        "search_query": "Thievery Corporation Lebanese Blonde",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
     "artist": "Gorillaz",
     "genre": "Genre Blending",
     "genre_style": "cloud",
@@ -350,6 +584,101 @@ export const ALBUMS_DATA: ArtistGroup[] = [
         "title": "Gorillaz",
         "key_track": "Clint Eastwood",
         "search_query": "Gorillaz Gorillaz album",
+        "artworkUrl": null,
+        "itunesLink": null
+      },
+      {
+        "year": 2010,
+        "title": "Plastic Beach",
+        "key_track": "On Melancholy Hill",
+        "search_query": "Gorillaz On Melancholy Hill",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Zero 7",
+    "genre": "Downtempo",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 2001,
+        "title": "Simple Things",
+        "key_track": "Destiny",
+        "search_query": "Zero 7 Destiny",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "RJD2",
+    "genre": "Instrumental Hip-Hop",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 2002,
+        "title": "Dead Ringer",
+        "key_track": "Ghostwriter",
+        "search_query": "RJD2 Ghostwriter",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Bonobo",
+    "genre": "Downtempo",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 2003,
+        "title": "Dial 'M' for Monkey",
+        "key_track": "Pick Up",
+        "search_query": "Bonobo Pick Up",
+        "artworkUrl": null,
+        "itunesLink": null
+      },
+      {
+        "year": 2010,
+        "title": "Black Sands",
+        "key_track": "Kong",
+        "search_query": "Bonobo Kong",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Wax Tailor",
+    "genre": "Trip-Hop / Cinematic",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 2005,
+        "title": "Tales of the Forgotten Melodies",
+        "key_track": "Que Sera",
+        "search_query": "Wax Tailor Que Sera",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+
+  // ═══════════════════════════════════════════
+  //  POST-2008 — LEGACY & EVOLUTION
+  // ═══════════════════════════════════════════
+  {
+    "artist": "Little Dragon",
+    "genre": "Trip-Hop / Synth Pop",
+    "genre_style": "cloud",
+    "albums": [
+      {
+        "year": 2011,
+        "title": "Ritual Union",
+        "key_track": "Ritual Union",
+        "search_query": "Little Dragon Ritual Union",
         "artworkUrl": null,
         "itunesLink": null
       }

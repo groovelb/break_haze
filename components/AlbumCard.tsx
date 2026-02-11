@@ -1,5 +1,6 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { EnrichedAlbum } from '../types';
+import { classifyGenreZone, ZONE_COLORS } from '../utils/genre';
 
 interface Ripple {
   x: number;
@@ -26,6 +27,8 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album, onPlay, onStop, activeId, 
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const [isHovered, setIsHovered] = useState(false);
   const isActive = activeId === album.id;
+  const zone = useMemo(() => classifyGenreZone(album), [album]);
+  const zoneColor = ZONE_COLORS[zone];
 
   const spawnRipple = useCallback((canvas: HTMLCanvasElement) => {
     const cx = canvas.width / 2;
@@ -116,13 +119,19 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album, onPlay, onStop, activeId, 
       className={`relative transition-all duration-500 group select-none ${
         variant === 'grid'
           ? 'w-full z-10'
-          : 'flex-shrink-0 w-72 md:w-96 mx-8 z-10'
+          : 'w-full z-10'
       }`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       {/* Vinyl/Case Wrapper */}
-      <div className={`relative aspect-square border-2 overflow-hidden transition-colors duration-300 isolate ${isHovered || isActive ? 'border-white' : 'border-neutral-800'}`}>
+      <div
+        className={`relative aspect-square border-2 overflow-hidden transition-all duration-300 isolate ${isHovered || isActive ? '' : 'border-neutral-800'}`}
+        style={isHovered || isActive ? {
+          borderColor: zoneColor.primary,
+          boxShadow: `0 0 20px ${zoneColor.glow}, inset 0 0 20px ${zoneColor.faded}`,
+        } : undefined}
+      >
         
         {/* Image */}
         <img
@@ -137,8 +146,8 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album, onPlay, onStop, activeId, 
         {/* Glitch Overlay on Hover */}
         {(isHovered || isActive) && (
           <>
-             <div className="absolute inset-0 bg-white opacity-10 mix-blend-screen animate-pulse pointer-events-none" />
-             <div className="absolute top-0 left-0 w-full h-2 bg-white/50 animate-glitch-skew pointer-events-none" />
+             <div className="absolute inset-0 opacity-10 mix-blend-screen animate-pulse pointer-events-none" style={{ backgroundColor: zoneColor.primary }} />
+             <div className="absolute top-0 left-0 w-full h-2 animate-glitch-skew pointer-events-none" style={{ backgroundColor: `${zoneColor.primary}80` }} />
           </>
         )}
 
