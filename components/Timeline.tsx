@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useLayoutEffect, useRef, useMemo, useCallback, useState, useEffect } from 'react';
 import { EnrichedAlbum } from '../types';
 import AlbumCard from './AlbumCard';
 import { ColorPalette } from '../utils/color-extract';
@@ -20,6 +20,15 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
   const sectionRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const ctxRef = useRef<gsap.Context | null>(null);
+
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mql = window.matchMedia('(max-width: 767px)');
+    const handler = () => setIsMobile(mql.matches);
+    handler();
+    mql.addEventListener('change', handler);
+    return () => mql.removeEventListener('change', handler);
+  }, []);
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
@@ -87,17 +96,17 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
          ))}
       </div>
 
-      {/* Genre Zone Gradients */}
-      <div className="absolute inset-0 z-[5] pointer-events-none">
+      {/* Genre Zone Gradients (desktop only) */}
+      <div className="absolute inset-0 z-[5] pointer-events-none hidden md:block">
         <div className="absolute top-0 left-0 w-full h-2/5" style={{ background: 'linear-gradient(to bottom, rgba(36,0,70,0.12), transparent)' }} />
         <div className="absolute bottom-40 left-0 w-full h-2/5" style={{ background: 'linear-gradient(to top, rgba(204,255,0,0.04), transparent)' }} />
       </div>
 
-      {/* ═══ Centered Content Wrapper (absolute positioned, centered with top+translate) ═══ */}
-      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[800px]">
+      {/* ═══ Centered Content Wrapper ═══ */}
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[600px] md:h-[800px]">
 
-        {/* Y-Axis: Frequency Spectrum Indicator */}
-        <div className="absolute left-5 top-0 bottom-0 z-20 pointer-events-none">
+        {/* Y-Axis: Frequency Spectrum Indicator (desktop only) */}
+        <div className="absolute left-5 top-0 bottom-0 z-20 pointer-events-none hidden md:block">
           {/* Vertical gradient bar */}
           <div className="absolute top-[60px] bottom-[360px] w-px" style={{ background: 'linear-gradient(to bottom, #a855f7 0%, rgba(255,255,255,0.15) 50%, #ccff00 100%)' }} />
 
@@ -128,15 +137,15 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
         {/* Horizontal Track (moved by ScrollTrigger) */}
         <div
           ref={trackRef}
-          className="flex items-start h-full px-[10vw] relative z-10 will-change-transform"
+          className="flex items-center md:items-start h-full px-[10vw] relative z-10 will-change-transform"
         >
           {albums.map((album) => {
-            const yOffset = getVerticalOffset(album);
+            const yOffset = isMobile ? 0 : getVerticalOffset(album);
             return (
               <div
                 key={album.id}
                 className="flex-shrink-0 w-72 md:w-96 mx-8"
-                style={{ transform: `translateY(${yOffset}px)` }}
+                style={yOffset ? { transform: `translateY(${yOffset}px)` } : undefined}
               >
                 <AlbumCard
                   album={album}
