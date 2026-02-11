@@ -47,15 +47,24 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId })
     };
   }, [albums]);
 
-  // Calculate Year Range and Data
-  const { minYear, maxYear, years } = useMemo(() => {
-    if (albums.length === 0) return { minYear: 1990, maxYear: 2005, years: [] };
-    const yearsArr = albums.map(a => a.year);
-    const min = Math.min(...yearsArr);
-    const max = Math.max(...yearsArr);
-    const range = Array.from({ length: max - min + 1 }, (_, i) => min + i);
-    return { minYear: min, maxYear: max, years: range };
+  // Unique sorted years that actually have albums — even spacing, no dead gaps
+  const activeYears = useMemo(() => {
+    return [...new Set(albums.map(a => a.year))].sort((a, b) => a - b);
   }, [albums]);
+
+  // Map year -> percent position (index-based, evenly distributed)
+  const yearToPercent = useMemo(() => {
+    const map: Record<number, number> = {};
+    const count = activeYears.length;
+    if (count <= 1) {
+      activeYears.forEach(y => map[y] = 50);
+    } else {
+      activeYears.forEach((y, i) => {
+        map[y] = (i / (count - 1)) * 100;
+      });
+    }
+    return map;
+  }, [activeYears]);
 
   // Compute stagger index for albums sharing the same year
   const albumsWithStagger = useMemo(() => {

@@ -1,5 +1,14 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { EnrichedAlbum } from '../types';
+
+interface Ripple {
+  x: number;
+  y: number;
+  radius: number;
+  maxRadius: number;
+  opacity: number;
+  birth: number;
+}
 
 interface AlbumCardProps {
   album: EnrichedAlbum;
@@ -11,8 +20,83 @@ interface AlbumCardProps {
 
 const AlbumCard: React.FC<AlbumCardProps> = ({ album, onPlay, onStop, activeId, variant = 'timeline' }) => {
   const cardRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const ripplesRef = useRef<Ripple[]>([]);
+  const rafRef = useRef<number>(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const [isHovered, setIsHovered] = useState(false);
   const isActive = activeId === album.id;
+
+  const spawnRipple = useCallback((canvas: HTMLCanvasElement) => {
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+    const maxR = Math.hypot(cx, cy);
+    ripplesRef.current.push({
+      x: cx, y: cy,
+      radius: 0,
+      maxRadius: maxR,
+      opacity: 0.6,
+      birth: performance.now(),
+    });
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const resize = () => {
+      const rect = canvas.parentElement!.getBoundingClientRect();
+      canvas.width = rect.width;
+      canvas.height = rect.height;
+    };
+    resize();
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const now = performance.now();
+
+      ripplesRef.current = ripplesRef.current.filter(r => r.opacity > 0.01);
+
+      for (const r of ripplesRef.current) {
+        const age = (now - r.birth) / 1000;
+        const speed = 180;
+        r.radius = age * speed;
+        r.opacity = Math.max(0, 0.6 * (1 - r.radius / r.maxRadius));
+
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(255,255,255,${r.opacity})`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+
+      rafRef.current = requestAnimationFrame(draw);
+    };
+
+    rafRef.current = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    if (isActive) {
+      spawnRipple(canvas);
+      intervalRef.current = setInterval(() => spawnRipple(canvas), 800);
+    } else {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    }
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [isActive, spawnRipple]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -58,18 +142,16 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album, onPlay, onStop, activeId, 
           </>
         )}
 
-        {/* Play Indicator (Now simpler as it's hover) */}
-        <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ${isActive ? 'opacity-100' : 'opacity-0'}`}>
-             <div className="w-16 h-16 rounded-full border-4 border-white flex items-center justify-center animate-spin-slow">
-                <div className="w-4 h-4 bg-white rounded-full animate-ping" />
-             </div>
-        </div>
+        {/* Ripple Canvas */}
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full pointer-events-none"
+        />
       </div>
 
       {/* Info */}
       <div className="mt-4 font-mono text-xs uppercase tracking-widest relative">
-        <div className={`absolute -left-2 top-0 h-full w-1 transition-all duration-300 ${isHovered ? 'bg-white' : 'bg-transparent'}`} />
-        <h3 className={`text-xl font-bold font-display leading-none mb-1 transition-colors ${isHovered ? 'text-white' : 'text-gray-500'}`}>
+<h3 className={`text-xl font-bold font-display leading-none mb-1 transition-colors ${isHovered ? 'text-white' : 'text-gray-500'}`}>
           {album.title}
         </h3>
         <p className={`${isHovered ? 'text-white' : 'text-gray-600'}`}>

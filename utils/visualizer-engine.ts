@@ -3,76 +3,26 @@ import { ColorPalette } from './color-extract';
 
 type Mode = 'thunder' | 'cloud';
 
-// --- Audio Band Indices (128 bins from fftSize=256) ---
+// --- Audio Bands (128 bins from fftSize=256) ---
 const BAND_SUB_BASS: [number, number] = [0, 8];
 const BAND_BASS: [number, number] = [8, 24];
 const BAND_MID: [number, number] = [24, 64];
 const BAND_HIGH: [number, number] = [64, 128];
 
-// --- 3 color slots: primary(0), secondary(1), accent(2) ---
-const NUM_COLORS = 3;
-// Spawn weight: 45% primary, 35% secondary, 20% accent
-const COLOR_WEIGHTS = [0.45, 0.80, 1.0]; // cumulative
-
-interface ModeConfig {
-  clearAlpha: number;
-  baseSpeed: number;
-  noiseScale: number;
-  noiseStrength: number;
-  archStrength: number;
-  archSpread: number;
-  spawnRate: number;
-  maxLife: [number, number];
-  sizeRange: [number, number];
-  bassVelocityMult: number;
-  burstThreshold: number;
-  burstAmount: number;
-  idleClearAlpha: number;
-  idleSpawnRate: number;
-  idleSpeedMult: number;
-  idleAlphaCap: number;
+// --- Aurora Blob ---
+interface Blob {
+  baseX: number;       // normalized 0-1
+  baseY: number;
+  baseRadius: number;  // normalized to min(w,h)
+  radius: number;      // current rendered radius
+  color: [number, number, number];
+  noiseOffX: number;   // unique noise seed offsets
+  noiseOffY: number;
+  audioBand: 'subBass' | 'bass' | 'mid'; // which band drives this blob
 }
 
-const CONFIGS: Record<Mode, ModeConfig> = {
-  cloud: {
-    clearAlpha: 0.04,
-    baseSpeed: 0.6,
-    noiseScale: 0.003,
-    noiseStrength: 1.2,
-    archStrength: 0.35,
-    archSpread: 1.4,
-    spawnRate: 12,
-    maxLife: [180, 400],
-    sizeRange: [0.8, 2.5],
-    bassVelocityMult: 1.5,
-    burstThreshold: 180,
-    burstAmount: 20,
-    idleClearAlpha: 0.015,
-    idleSpawnRate: 2,
-    idleSpeedMult: 0.25,
-    idleAlphaCap: 0.12,
-  },
-  thunder: {
-    clearAlpha: 0.12,
-    baseSpeed: 1.4,
-    noiseScale: 0.005,
-    noiseStrength: 2.0,
-    archStrength: 0.5,
-    archSpread: 1.0,
-    spawnRate: 18,
-    maxLife: [80, 200],
-    sizeRange: [0.5, 3.0],
-    bassVelocityMult: 3.0,
-    burstThreshold: 150,
-    burstAmount: 50,
-    idleClearAlpha: 0.02,
-    idleSpawnRate: 2,
-    idleSpeedMult: 0.2,
-    idleAlphaCap: 0.10,
-  },
-};
-
-interface ShockwaveRing {
+// --- Pulse Ring ---
+interface Ring {
   x: number;
   y: number;
   radius: number;
@@ -80,17 +30,21 @@ interface ShockwaveRing {
   alpha: number;
   lineWidth: number;
   speed: number;
-  color: string;
+  color: [number, number, number];
 }
 
-const MAX_RINGS = 12;
-const CELL_SIZE = 20;
-const MAX_PARTICLES = 4000;
+const MAX_RINGS = 8;
 
-// Parse "rgb(r, g, b)" -> [r, g, b] or null
-function parseRgb(s: string): [number, number, number] | null {
+// --- Dust Particle (spring-based vibration driven by ring wavefronts) ---
+const DUST_COUNT = 1500;
+const SPRING_K = 0.35;
+const SPRING_DAMP = 0.75;
+const RING_BAND = 40;
+
+// Parse "rgb(r, g, b)" -> [r,g,b]
+function parseRgb(s: string): [number, number, number] {
   const m = s.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-  return m ? [+m[1], +m[2], +m[3]] : null;
+  return m ? [+m[1], +m[2], +m[3]] : [255, 255, 255];
 }
 
 export class VisualizerEngine {
@@ -99,28 +53,24 @@ export class VisualizerEngine {
   private w = 0;
   private h = 0;
 
-  // SoA particle data
-  private px = new Float32Array(MAX_PARTICLES);
-  private py = new Float32Array(MAX_PARTICLES);
-  private vx = new Float32Array(MAX_PARTICLES);
-  private vy = new Float32Array(MAX_PARTICLES);
-  private life = new Float32Array(MAX_PARTICLES);
-  private maxLife = new Float32Array(MAX_PARTICLES);
-  private alpha = new Float32Array(MAX_PARTICLES);
-  private size = new Float32Array(MAX_PARTICLES);
-  private colorIdx = new Uint8Array(MAX_PARTICLES); // 0=primary, 1=secondary, 2=accent
-  private count = 0;
-
-  // Flow field
-  private fieldCols = 0;
-  private fieldRows = 0;
-  private fieldAngles: Float32Array = new Float32Array(0);
+  // Aurora blobs
+  private blobs: Blob[] = [];
   private noise2D = createNoise2D(42);
 
-  // Shockwave rings
-  private rings: ShockwaveRing[] = [];
+  // Pulse rings
+  private rings: Ring[] = [];
   private lastBassHitTime = 0;
-  private ringColorToggle = 0; // alternates ring colors
+  private ringColorToggle = 0;
+
+  // Dust particles (SoA for this small fixed-size pool)
+  private dustX = new Float32Array(DUST_COUNT);
+  private dustY = new Float32Array(DUST_COUNT);
+  private dustRestY = new Float32Array(DUST_COUNT);
+  private dustVy = new Float32Array(DUST_COUNT);
+  private dustAlpha = new Float32Array(DUST_COUNT);
+  private dustSize = new Float32Array(DUST_COUNT);
+  private dustColorIdx = new Uint8Array(DUST_COUNT); // 0,1,2 palette index
+  private dustInited = false;
 
   // Audio
   private analyser: AnalyserNode | null = null;
@@ -128,11 +78,9 @@ export class VisualizerEngine {
   private smoothBands = { subBass: 0, bass: 0, mid: 0, high: 0 };
   private prevBass = 0;
 
-  // Multi-color state — 3 rgba prefixes, 3 shadow colors, 3 ring-ready colors
+  // Colors — [primary, secondary, accent] as RGB tuples
   private palette: ColorPalette | null = null;
-  private colors: string[] = ['rgba(255,255,255,', 'rgba(255,255,255,', 'rgba(255,255,255,']; // rgba prefix per slot
-  private shadowColors: string[] = ['rgba(255,255,255,0.4)', 'rgba(255,255,255,0.4)', 'rgba(255,255,255,0.4)'];
-  private ringColors: string[] = ['#ffffff', '#ffffff', '#ffffff'];
+  private paletteRgb: [number, number, number][] = [[255, 255, 255], [255, 255, 255], [255, 255, 255]];
 
   // State
   private mode: Mode = 'cloud';
@@ -144,6 +92,30 @@ export class VisualizerEngine {
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d')!;
+    this.initBlobs();
+  }
+
+  private initBlobs() {
+    this.blobs = [
+      {
+        baseX: 0.35, baseY: 0.45, baseRadius: 0.35,
+        radius: 0, color: [255, 255, 255],
+        noiseOffX: 0, noiseOffY: 100,
+        audioBand: 'subBass',
+      },
+      {
+        baseX: 0.65, baseY: 0.40, baseRadius: 0.30,
+        radius: 0, color: [255, 255, 255],
+        noiseOffX: 200, noiseOffY: 300,
+        audioBand: 'bass',
+      },
+      {
+        baseX: 0.50, baseY: 0.70, baseRadius: 0.32,
+        radius: 0, color: [255, 255, 255],
+        noiseOffX: 400, noiseOffY: 500,
+        audioBand: 'mid',
+      },
+    ];
   }
 
   setAnalyser(analyser: AnalyserNode | null) {
@@ -153,9 +125,7 @@ export class VisualizerEngine {
     }
   }
 
-  setMode(mode: Mode) {
-    this.mode = mode;
-  }
+  setMode(mode: Mode) { this.mode = mode; }
 
   setPlaying(playing: boolean) {
     this.isPlaying = playing;
@@ -174,23 +144,17 @@ export class VisualizerEngine {
   }
 
   private resetToWhite() {
-    for (let i = 0; i < NUM_COLORS; i++) {
-      this.colors[i] = 'rgba(255,255,255,';
-      this.shadowColors[i] = 'rgba(255,255,255,0.4)';
-      this.ringColors[i] = '#ffffff';
-    }
+    const w: [number, number, number] = [255, 255, 255];
+    this.paletteRgb = [w, w, w];
+    for (const blob of this.blobs) blob.color = w;
   }
 
   private applyPalette(palette: ColorPalette) {
     const entries = [palette.primary, palette.secondary, palette.accent];
-    for (let i = 0; i < NUM_COLORS; i++) {
-      const rgb = parseRgb(entries[i]);
-      if (rgb) {
-        const [r, g, b] = rgb;
-        this.colors[i] = `rgba(${r},${g},${b},`;
-        this.shadowColors[i] = `rgba(${r},${g},${b},0.4)`;
-        this.ringColors[i] = entries[i];
-      }
+    this.paletteRgb = entries.map(parseRgb) as [number, number, number][];
+    // Assign each blob a palette color
+    for (let i = 0; i < this.blobs.length; i++) {
+      this.blobs[i].color = this.paletteRgb[i % this.paletteRgb.length];
     }
   }
 
@@ -199,9 +163,23 @@ export class VisualizerEngine {
     this.h = h;
     this.canvas.width = w;
     this.canvas.height = h;
-    this.fieldCols = Math.ceil(w / CELL_SIZE) + 1;
-    this.fieldRows = Math.ceil(h / CELL_SIZE) + 1;
-    this.fieldAngles = new Float32Array(this.fieldCols * this.fieldRows);
+    this.initDust();
+  }
+
+  private initDust() {
+    if (this.w === 0 || this.h === 0) return;
+    const centerY = this.h * 0.50;
+    for (let i = 0; i < DUST_COUNT; i++) {
+      this.dustX[i] = (i / DUST_COUNT) * this.w + (Math.random() - 0.5) * (this.w / DUST_COUNT);
+      const restY = centerY + (Math.random() - 0.5) * this.h * 0.12;
+      this.dustRestY[i] = restY;
+      this.dustY[i] = restY;
+      this.dustVy[i] = 0;
+      this.dustAlpha[i] = 0.12;
+      this.dustSize[i] = 0.5 + Math.random() * 1.2;
+      this.dustColorIdx[i] = Math.floor(Math.random() * 3);
+    }
+    this.dustInited = true;
   }
 
   start() {
@@ -218,24 +196,22 @@ export class VisualizerEngine {
     }
   }
 
-  // --- Private ---
+  // --- Loop ---
 
   private loop = () => {
     if (!this.running) return;
     this.time += 0.01;
     this.readAudio();
-    this.updateFlowField();
-    this.spawnParticles();
     this.detectBassHits();
-    this.updateParticles();
     this.updateRings();
+    this.updateDust();
     this.render();
     this.rafId = requestAnimationFrame(this.loop);
   };
 
   private readAudio() {
     if (!this.analyser || !this.isPlaying) {
-      const d = 0.95;
+      const d = 0.93;
       this.smoothBands.subBass *= d;
       this.smoothBands.bass *= d;
       this.smoothBands.mid *= d;
@@ -251,7 +227,7 @@ export class VisualizerEngine {
       return sum / (end - start) / 255;
     };
 
-    const lerp = 0.15;
+    const lerp = 0.12;
     this.prevBass = this.smoothBands.bass;
     this.smoothBands.subBass += (avg(...BAND_SUB_BASS) - this.smoothBands.subBass) * lerp;
     this.smoothBands.bass += (avg(...BAND_BASS) - this.smoothBands.bass) * lerp;
@@ -265,53 +241,50 @@ export class VisualizerEngine {
     const bassNow = this.smoothBands.bass + this.smoothBands.subBass;
     const bassPrev = this.prevBass + this.smoothBands.subBass * 0.8;
     const isThunder = this.mode === 'thunder';
-    const threshold = isThunder ? 0.35 : 0.45;
-    const cooldown = isThunder ? 8 : 12;
+    const threshold = isThunder ? 0.30 : 0.40;
+    const cooldown = isThunder ? 0.06 : 0.10;
 
-    if (bassNow > threshold && bassNow > bassPrev * 1.15 &&
-        this.time - this.lastBassHitTime > cooldown * 0.01) {
+    if (bassNow > threshold && bassNow > bassPrev * 1.12 &&
+        this.time - this.lastBassHitTime > cooldown) {
       this.lastBassHitTime = this.time;
-      this.spawnShockwave(bassNow);
+      this.spawnRing(bassNow);
     }
   }
 
-  private spawnShockwave(intensity: number) {
+  private spawnRing(intensity: number) {
+    if (this.rings.length >= MAX_RINGS) this.rings.shift();
+
     const cx = this.w * 0.5;
-    const cy = this.h * 0.85;
-
-    if (this.rings.length >= MAX_RINGS) {
-      this.rings.shift();
-    }
-
+    const cy = this.h * 0.55;
     const isThunder = this.mode === 'thunder';
-    const maxR = Math.min(this.w, this.h) * (0.3 + intensity * 0.5);
+    const maxR = Math.min(this.w, this.h) * (0.25 + intensity * 0.4);
 
-    // Alternate between primary(0) and secondary(1)
+    // Alternate primary/secondary color
     const ci = this.ringColorToggle % 2;
     this.ringColorToggle++;
 
     this.rings.push({
-      x: cx + (Math.random() - 0.5) * this.w * 0.1,
-      y: cy + (Math.random() - 0.5) * 30,
-      radius: 10,
+      x: cx,
+      y: cy,
+      radius: 5,
       maxRadius: maxR,
-      alpha: isThunder ? 0.7 + intensity * 0.3 : 0.4 + intensity * 0.3,
-      lineWidth: isThunder ? 3 + intensity * 4 : 2 + intensity * 2,
-      speed: isThunder ? 6 + intensity * 8 : 3 + intensity * 4,
-      color: this.ringColors[ci],
+      alpha: isThunder ? 0.25 + intensity * 0.15 : 0.12 + intensity * 0.12,
+      lineWidth: isThunder ? 2 + intensity * 2.5 : 1 + intensity * 1.5,
+      speed: isThunder ? 4 + intensity * 6 : 2 + intensity * 4,
+      color: this.paletteRgb[ci],
     });
 
-    // Thunder: second ring in the other color
-    if (isThunder && intensity > 0.5) {
+    // Thunder: second ring with delay feel
+    if (isThunder && intensity > 0.45) {
       this.rings.push({
-        x: cx + (Math.random() - 0.5) * this.w * 0.15,
-        y: cy + (Math.random() - 0.5) * 40,
-        radius: 5,
-        maxRadius: maxR * 0.7,
-        alpha: 0.5 + intensity * 0.2,
-        lineWidth: 2 + intensity * 2,
-        speed: 8 + intensity * 6,
-        color: this.ringColors[1 - ci],
+        x: cx,
+        y: cy,
+        radius: 2,
+        maxRadius: maxR * 0.6,
+        alpha: 0.15 + intensity * 0.08,
+        lineWidth: 1 + intensity * 1,
+        speed: 6 + intensity * 5,
+        color: this.paletteRgb[1 - ci],
       });
     }
   }
@@ -321,237 +294,165 @@ export class VisualizerEngine {
       const ring = this.rings[i];
       ring.radius += ring.speed;
       const progress = ring.radius / ring.maxRadius;
-      ring.alpha *= (1 - progress * 0.04);
-      ring.lineWidth *= 0.995;
+      ring.alpha *= (1 - progress * 0.035);
+      ring.lineWidth *= 0.997;
 
-      if (ring.radius >= ring.maxRadius || ring.alpha < 0.01) {
+      if (ring.radius >= ring.maxRadius || ring.alpha < 0.005) {
         this.rings.splice(i, 1);
       }
     }
   }
 
-  private updateFlowField() {
-    const cfg = CONFIGS[this.mode];
-    const scale = cfg.noiseScale;
-    const t = this.isPlaying ? this.time : this.time * 0.3;
-    const turbulence = 1 + this.smoothBands.mid * 2;
+  private updateDust() {
+    if (!this.dustInited) return;
 
-    for (let row = 0; row < this.fieldRows; row++) {
-      for (let col = 0; col < this.fieldCols; col++) {
-        const nx = col * scale * CELL_SIZE + t;
-        const ny = row * scale * CELL_SIZE + t * 0.7;
-        this.fieldAngles[row * this.fieldCols + col] = this.noise2D(nx, ny) * Math.PI * turbulence;
-      }
-    }
-  }
+    const isThunder = this.mode === 'thunder';
+    const impulseMult = isThunder ? 2.0 : 1.0;
+    const nRings = this.rings.length;
+    const t = this.time;
 
-  private spawnParticles() {
-    const cfg = CONFIGS[this.mode];
-    let rate: number;
-    let speedMult: number;
+    for (let i = 0; i < DUST_COUNT; i++) {
+      let force = 0;
 
-    if (this.isPlaying) {
-      rate = cfg.spawnRate;
-      rate += rate * this.smoothBands.subBass * 3;
-      speedMult = 1;
+      for (let ri = 0; ri < nRings; ri++) {
+        const ring = this.rings[ri];
+        const dx = this.dustX[i] - ring.x;
+        const dy = this.dustRestY[i] - ring.y;
+        const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+        const distFromWave = distFromCenter - ring.radius;
 
-      const subBassRaw = this.smoothBands.subBass * 255;
-      if (subBassRaw > cfg.burstThreshold) {
-        rate += cfg.burstAmount;
-      }
-    } else {
-      rate = cfg.idleSpawnRate;
-      speedMult = cfg.idleSpeedMult;
-    }
-
-    const toSpawn = Math.min(Math.floor(rate), MAX_PARTICLES - this.count);
-    const cx = this.w * 0.5;
-    const spread = this.w * 0.3 * cfg.archSpread;
-
-    for (let i = 0; i < toSpawn; i++) {
-      const idx = this.count++;
-      this.px[idx] = cx + (Math.random() - 0.5) * spread;
-      this.py[idx] = this.h + Math.random() * 10;
-      this.vx[idx] = (Math.random() - 0.5) * cfg.baseSpeed * 0.5 * speedMult;
-      this.vy[idx] = -cfg.baseSpeed * (0.5 + Math.random() * 0.5) * speedMult;
-      const lifeRange = cfg.maxLife[1] - cfg.maxLife[0];
-      const lifeMult = this.isPlaying ? 1 : 1.8;
-      this.maxLife[idx] = (cfg.maxLife[0] + Math.random() * lifeRange) * lifeMult;
-      this.life[idx] = 0;
-      this.alpha[idx] = 0;
-      this.size[idx] = cfg.sizeRange[0] + Math.random() * (cfg.sizeRange[1] - cfg.sizeRange[0]);
-
-      // Assign color: weighted random (primary 45%, secondary 35%, accent 20%)
-      const roll = Math.random();
-      this.colorIdx[idx] = roll < COLOR_WEIGHTS[0] ? 0 : roll < COLOR_WEIGHTS[1] ? 1 : 2;
-    }
-  }
-
-  private updateParticles() {
-    const cfg = CONFIGS[this.mode];
-    const cx = this.w * 0.5;
-    const bassBoost = this.isPlaying ? 1 + this.smoothBands.bass * cfg.bassVelocityMult : 1;
-    const highAlpha = this.smoothBands.high;
-    const idleAlphaCap = cfg.idleAlphaCap;
-
-    let writeIdx = 0;
-
-    for (let i = 0; i < this.count; i++) {
-      this.life[i]++;
-
-      if (this.life[i] >= this.maxLife[i]) continue;
-
-      const lifeRatio = this.life[i] / this.maxLife[i];
-
-      // Flow field lookup
-      const col = Math.floor(this.px[i] / CELL_SIZE);
-      const row = Math.floor(this.py[i] / CELL_SIZE);
-      if (col >= 0 && col < this.fieldCols && row >= 0 && row < this.fieldRows) {
-        const angle = this.fieldAngles[row * this.fieldCols + col];
-        const strength = this.isPlaying ? cfg.noiseStrength : cfg.noiseStrength * 0.4;
-        this.vx[i] += Math.cos(angle) * strength * 0.1;
-        this.vy[i] += Math.sin(angle) * strength * 0.1;
+        if (Math.abs(distFromWave) < RING_BAND) {
+          const proximity = 1 - Math.abs(distFromWave) / RING_BAND;
+          // Signed: ahead of wavefront → up, behind → down (symmetric oscillation)
+          const sign = distFromWave >= 0 ? 1 : -1;
+          force += ring.alpha * ring.speed * proximity * sign * impulseMult;
+        }
       }
 
-      // Arch force
-      const dx = this.px[i] - cx;
-      const distFromCenter = Math.abs(dx) / (this.w * 0.5);
-      const archCurve = Math.sin(distFromCenter * Math.PI * 0.8);
-      const archMult = this.isPlaying ? 1 : 0.5;
-      this.vy[i] -= cfg.archStrength * archCurve * 0.1 * archMult;
-      this.vx[i] += Math.sign(dx) * cfg.archStrength * 0.05 * (1 - distFromCenter) * archMult;
-
-      // Damping
-      this.vx[i] *= 0.98;
-      this.vy[i] *= 0.98;
-
-      // Position
-      this.px[i] += this.vx[i] * bassBoost;
-      this.py[i] += this.vy[i] * bassBoost;
-
-      // Alpha envelope
-      let a: number;
-      if (lifeRatio < 0.1) {
-        a = lifeRatio / 0.1;
-      } else if (lifeRatio > 0.7) {
-        a = (1 - lifeRatio) / 0.3;
-      } else {
-        a = 1;
-      }
-
+      // Ambient bass: standing wave pattern (sin across x position + time)
       if (this.isPlaying) {
-        a *= 0.3 + highAlpha * 0.7 + 0.3;
-      } else {
-        a *= idleAlphaCap;
+        const wavePhase = this.dustX[i] * 0.008 + t * 12;
+        const bassWave = Math.sin(wavePhase);
+        force += bassWave * this.smoothBands.bass * 6 * impulseMult;
+        force += bassWave * this.smoothBands.subBass * 10 * impulseMult;
       }
-      this.alpha[i] = Math.min(1, a);
 
-      this.size[i] += this.smoothBands.bass * 0.02;
+      // Signed displacement: positive = up, negative = down
+      const targetOffset = -force * 16;
 
-      // Out of bounds?
-      if (this.px[i] < -50 || this.px[i] > this.w + 50 || this.py[i] < -50) continue;
+      // Spring physics: accelerate toward (restY + targetOffset)
+      const targetY = this.dustRestY[i] + targetOffset;
+      const displacement = targetY - this.dustY[i];
+      this.dustVy[i] += displacement * SPRING_K;
+      this.dustVy[i] *= SPRING_DAMP;
+      this.dustY[i] += this.dustVy[i];
 
-      // Compact — copy all fields including colorIdx
-      if (writeIdx !== i) {
-        this.px[writeIdx] = this.px[i];
-        this.py[writeIdx] = this.py[i];
-        this.vx[writeIdx] = this.vx[i];
-        this.vy[writeIdx] = this.vy[i];
-        this.life[writeIdx] = this.life[i];
-        this.maxLife[writeIdx] = this.maxLife[i];
-        this.alpha[writeIdx] = this.alpha[i];
-        this.size[writeIdx] = this.size[i];
-        this.colorIdx[writeIdx] = this.colorIdx[i];
+      const lift = Math.abs(this.dustRestY[i] - this.dustY[i]);
+      if (lift > 1) {
+        this.dustX[i] += (Math.random() - 0.5) * lift * 0.12;
       }
-      writeIdx++;
+
+      this.dustAlpha[i] = lift > 3
+        ? Math.min(0.9, 0.25 + lift * 0.006)
+        : 0.10;
     }
-
-    this.count = writeIdx;
   }
+
+  // --- Render ---
 
   private render() {
     const ctx = this.ctx;
-    const cfg = CONFIGS[this.mode];
 
-    // Trail clear
-    const clearAlpha = this.isPlaying ? cfg.clearAlpha : cfg.idleClearAlpha;
+    // Clear with slight trail for ring afterglow
+    const clearAlpha = this.isPlaying
+      ? (this.mode === 'thunder' ? 0.18 : 0.10)
+      : 0.04;
     ctx.fillStyle = `rgba(0,0,0,${clearAlpha})`;
     ctx.fillRect(0, 0, this.w, this.h);
 
-    // --- Shockwave Rings ---
+    // Aurora blobs (behind everything)
+    this.renderBlobs(ctx);
+
+    // Dust particles
+    this.renderDust(ctx);
+
+    // Pulse rings on top
     this.renderRings(ctx);
+  }
 
-    // --- Particles: bucket by (alpha x color) ---
-    // 4 alpha buckets x 3 color slots = 12 sub-buckets
-    const ALPHA_BANDS: [number, number][] = [
-      [0, 0.15],
-      [0.15, 0.35],
-      [0.35, 0.65],
-      [0.65, 1.01],
-    ];
+  private renderBlobs(ctx: CanvasRenderingContext2D) {
+    const scale = Math.min(this.w, this.h);
+    const t = this.isPlaying ? this.time : this.time * 0.25;
 
-    // Flat array: [alphaBand0_color0, alphaBand0_color1, alphaBand0_color2, alphaBand1_color0, ...]
-    const subBuckets: number[][] = new Array(ALPHA_BANDS.length * NUM_COLORS);
-    for (let i = 0; i < subBuckets.length; i++) subBuckets[i] = [];
+    // Blending mode: screen gives beautiful color mixing where blobs overlap
+    ctx.globalCompositeOperation = 'screen';
 
-    for (let i = 0; i < this.count; i++) {
-      const a = this.alpha[i];
-      const ci = this.colorIdx[i];
-      for (let ab = 0; ab < ALPHA_BANDS.length; ab++) {
-        if (a >= ALPHA_BANDS[ab][0] && a < ALPHA_BANDS[ab][1]) {
-          subBuckets[ab * NUM_COLORS + ci].push(i);
-          break;
-        }
-      }
+    for (const blob of this.blobs) {
+      // Drift position with noise
+      const driftX = this.noise2D(blob.noiseOffX + t * 0.3, 0) * 0.12;
+      const driftY = this.noise2D(0, blob.noiseOffY + t * 0.25) * 0.10;
+      const cx = (blob.baseX + driftX) * this.w;
+      const cy = (blob.baseY + driftY) * this.h;
+
+      // Audio-driven radius pulse
+      const bandValue = this.smoothBands[blob.audioBand];
+      const audioPulse = this.isPlaying ? bandValue * 0.25 : 0;
+      const breathe = Math.sin(t * 0.8 + blob.noiseOffX) * 0.03; // subtle idle breathing
+      const r = (blob.baseRadius + audioPulse + breathe) * scale;
+
+      // Alpha: active vs idle
+      const baseAlpha = this.isPlaying
+        ? 0.15 + this.smoothBands.high * 0.20 + bandValue * 0.10
+        : 0.04 + Math.sin(t * 0.5 + blob.noiseOffX) * 0.015;
+
+      const [cr, cg, cb] = blob.color;
+
+      // Radial gradient: color center fading to transparent
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      grad.addColorStop(0, `rgba(${cr},${cg},${cb},${baseAlpha})`);
+      grad.addColorStop(0.4, `rgba(${cr},${cg},${cb},${baseAlpha * 0.6})`);
+      grad.addColorStop(0.7, `rgba(${cr},${cg},${cb},${baseAlpha * 0.2})`);
+      grad.addColorStop(1, `rgba(${cr},${cg},${cb},0)`);
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    // Render each sub-bucket: one fillStyle + globalAlpha per group
-    for (let ab = 0; ab < ALPHA_BANDS.length; ab++) {
-      const [lo, hi] = ALPHA_BANDS[ab];
-      const midAlpha = (lo + hi) / 2;
-      const useGlow = lo >= 0.65;
+    ctx.globalCompositeOperation = 'source-over';
+  }
 
-      for (let ci = 0; ci < NUM_COLORS; ci++) {
-        const indices = subBuckets[ab * NUM_COLORS + ci];
-        if (indices.length === 0) continue;
+  private renderDust(ctx: CanvasRenderingContext2D) {
+    if (!this.dustInited) return;
 
-        ctx.globalAlpha = midAlpha;
-        ctx.fillStyle = this.colors[ci] + '1)';
+    for (let i = 0; i < DUST_COUNT; i++) {
+      const a = this.dustAlpha[i];
+      if (a < 0.02) continue;
 
-        if (useGlow) {
-          ctx.shadowColor = this.shadowColors[ci];
-          ctx.shadowBlur = 8;
-        } else {
-          ctx.shadowBlur = 0;
-        }
+      const [r, g, b] = this.paletteRgb[this.dustColorIdx[i]];
+      const sz = this.dustSize[i];
 
-        ctx.beginPath();
-        for (const idx of indices) {
-          const r = this.size[idx];
-          ctx.moveTo(this.px[idx] + r, this.py[idx]);
-          ctx.arc(this.px[idx], this.py[idx], r, 0, Math.PI * 2);
-        }
-        ctx.fill();
-      }
+      ctx.globalAlpha = a;
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.beginPath();
+      ctx.arc(this.dustX[i], this.dustY[i], sz, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     ctx.globalAlpha = 1;
-    ctx.shadowBlur = 0;
   }
 
   private renderRings(ctx: CanvasRenderingContext2D) {
     if (this.rings.length === 0) return;
 
     for (const ring of this.rings) {
+      const [r, g, b] = ring.color;
       ctx.beginPath();
       ctx.arc(ring.x, ring.y, ring.radius, 0, Math.PI * 2);
-      ctx.strokeStyle = ring.color;
-      ctx.globalAlpha = ring.alpha;
+      ctx.strokeStyle = `rgba(${r},${g},${b},${ring.alpha})`;
       ctx.lineWidth = ring.lineWidth;
       ctx.stroke();
     }
-
-    ctx.globalAlpha = 1;
-    ctx.lineWidth = 1;
   }
 }
