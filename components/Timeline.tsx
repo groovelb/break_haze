@@ -25,25 +25,32 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
     const track = trackRef.current;
     if (!section || !track || albums.length === 0) return;
 
-    const scrollDistance = track.scrollWidth - window.innerWidth;
-    if (scrollDistance <= 0) return;
+    const getScrollDistance = () => Math.max(0, track.scrollWidth - window.innerWidth);
+
+    if (getScrollDistance() <= 0) return;
 
     ctxRef.current = gsap.context(() => {
       gsap.to(track, {
-        x: -scrollDistance,
+        x: () => -getScrollDistance(),
         ease: 'none',
         scrollTrigger: {
           trigger: section,
           pin: true,
           scrub: 1,
           start: 'top top',
-          end: () => `+=${scrollDistance}`,
+          end: () => `+=${getScrollDistance()}`,
           invalidateOnRefresh: true,
         },
       });
     });
 
+    // Refresh after layout stabilizes (CSS/images/fonts)
+    const rafId = requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+    });
+
     return () => {
+      cancelAnimationFrame(rafId);
       ctxRef.current?.revert();
       ctxRef.current = null;
     };
