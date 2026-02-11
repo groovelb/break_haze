@@ -122,7 +122,7 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album, onPlay, onStop, activeId, 
       onMouseLeave={handleMouseLeave}
     >
       {/* Vinyl/Case Wrapper */}
-      <div className={`relative aspect-square border-2 overflow-hidden transition-colors duration-300 ${isHovered || isActive ? 'border-white' : 'border-neutral-800'}`}>
+      <div className={`relative aspect-square border-2 overflow-hidden transition-colors duration-300 isolate ${isHovered || isActive ? 'border-white' : 'border-neutral-800'}`}>
         
         {/* Image */}
         <img
@@ -137,7 +137,7 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album, onPlay, onStop, activeId, 
         {/* Glitch Overlay on Hover */}
         {(isHovered || isActive) && (
           <>
-             <div className="absolute inset-0 bg-white opacity-10 mix-blend-color-dodge animate-pulse pointer-events-none" />
+             <div className="absolute inset-0 bg-white opacity-10 mix-blend-screen animate-pulse pointer-events-none" />
              <div className="absolute top-0 left-0 w-full h-2 bg-white/50 animate-glitch-skew pointer-events-none" />
           </>
         )}
