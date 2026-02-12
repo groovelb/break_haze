@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { GenreId, getGenreConfig, GENRE_CONFIGS } from '../genre-config';
-import { fetchEnrichedAlbums } from '../services/api';
+import { getLocalAlbums, fetchPreviewUrls } from '../services/api';
 import { EnrichedAlbum, GenreStyle } from '../types';
 import { ColorPalette } from '../utils/color-extract';
 import Timeline from '../components/Timeline';
@@ -30,8 +30,10 @@ const GenrePage: React.FC<GenrePageProps> = ({ onPlay, onStop, activeId, activeC
 
   const [albums, setAlbums] = useState<EnrichedAlbum[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enriching, setEnriching] = useState(false);
   const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'timeline' | 'grid'>('timeline');
+  const abortRef = useRef(false);
 
   useEffect(() => {
     if (!config) {
@@ -39,12 +41,35 @@ const GenrePage: React.FC<GenrePageProps> = ({ onPlay, onStop, activeId, activeC
       return;
     }
 
-    setLoading(true);
+    abortRef.current = false;
     setSelectedArtist(null);
-    fetchEnrichedAlbums(config.id).then((data) => {
-      setAlbums(data);
-      setLoading(false);
-    });
+
+    // Phase 1: Instant render with local data
+    const localAlbums = getLocalAlbums(config.id);
+    setAlbums(localAlbums);
+    setLoading(false);
+
+    // Phase 2: Fetch preview URLs in background
+    const needsEnrichment = localAlbums.some(a => !a.previewUrl);
+    if (needsEnrichment) {
+      setEnriching(true);
+      fetchPreviewUrls(localAlbums, (updates) => {
+        if (abortRef.current) return;
+        setAlbums(prev => prev.map(album => {
+          const update = updates.get(album.id);
+          if (!update) return album;
+          return {
+            ...album,
+            previewUrl: update.previewUrl,
+            artworkUrl: update.artworkUrl || album.artworkUrl,
+          };
+        }));
+      }).finally(() => {
+        if (!abortRef.current) setEnriching(false);
+      });
+    }
+
+    return () => { abortRef.current = true; };
   }, [config, navigate]);
 
   // Stop playback on unmount (route change)
@@ -107,6 +132,12 @@ const GenrePage: React.FC<GenrePageProps> = ({ onPlay, onStop, activeId, activeC
           onStop={onStop}
           activeId={activeId}
         />
+      )}
+
+      {enriching && (
+        <div className="fixed bottom-4 right-4 z-50 font-mono text-[10px] text-white/30 tracking-wider animate-pulse">
+          LOADING_STREAMS...
+        </div>
       )}
     </>
   );

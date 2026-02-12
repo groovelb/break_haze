@@ -100,9 +100,20 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album, onPlay, onStop, activeId, 
     };
   }, [isActive, spawnRipple]);
 
+  // Preload audio on hover for instant playback
+  const preloadRef = useRef<HTMLAudioElement | null>(null);
+
   const handleMouseEnter = () => {
     setIsHovered(true);
     if (album.previewUrl) {
+      // Start preloading immediately
+      if (!preloadRef.current || preloadRef.current.src !== album.previewUrl) {
+        const audio = new Audio();
+        audio.preload = 'auto';
+        audio.crossOrigin = 'anonymous';
+        audio.src = album.previewUrl;
+        preloadRef.current = audio;
+      }
       onPlay(album.previewUrl, album.genre_style, album.id, album.artworkUrl);
     }
   };

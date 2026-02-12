@@ -44,7 +44,9 @@ const App: React.FC = () => {
     initializeAudioContext();
     setCurrentGenre(style);
     setActiveId(albumId);
-    extractColors(artworkUrl).then(setActiveColors);
+    // Use 100x100 artwork for faster color extraction (64x64 canvas doesn't need 600x600)
+    const smallArtwork = artworkUrl.replace('600x600bb', '100x100bb');
+    extractColors(smallArtwork).then(setActiveColors);
 
     if (audioRef.current.src !== url) {
       audioRef.current.crossOrigin = "anonymous";

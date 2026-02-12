@@ -3,6 +3,7 @@ import { EnrichedAlbum } from '../types';
 import { GenreId } from '../genre-config';
 
 const FALLBACK_ARTWORK = 'https://picsum.photos/600/600?grayscale';
+const CACHE_PREFIX = 'preview_v1:';
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -20,64 +21,130 @@ const fetchWithRetry = async (url: string, retries = 2) => {
   throw new Error('All retries failed');
 };
 
-export const fetchEnrichedAlbums = async (genreId?: GenreId): Promise<EnrichedAlbum[]> => {
+// --- localStorage preview URL cache ---
+
+function getCachedPreview(key: string): { previewUrl: string; artworkUrl?: string } | null {
+  try {
+    const raw = localStorage.getItem(CACHE_PREFIX + key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // Expire after 7 days
+    if (Date.now() - parsed.ts > 7 * 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(CACHE_PREFIX + key);
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function setCachedPreview(key: string, previewUrl: string, artworkUrl?: string) {
+  try {
+    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ previewUrl, artworkUrl, ts: Date.now() }));
+  } catch {
+    // Storage full — ignore
+  }
+}
+
+// --- Phase 1: Instant local albums (no API calls) ---
+
+export function getLocalAlbums(genreId?: GenreId): EnrichedAlbum[] {
   const sourceData = genreId ? getAlbumsByGenre(genreId) : ALBUMS_DATA;
-  const flattenedAlbums = [];
+  const results: EnrichedAlbum[] = [];
 
   for (const group of sourceData) {
     for (const album of group.albums) {
-      flattenedAlbums.push({ group, album });
-    }
-  }
+      const id = `${group.artist}-${album.title}`.replace(/\s+/g, '-').toLowerCase();
+      const cacheKey = `${group.artist}::${album.key_track}`;
+      const cached = getCachedPreview(cacheKey);
 
-  const results: EnrichedAlbum[] = [];
-  const BATCH_SIZE = 5;
-
-  for (let i = 0; i < flattenedAlbums.length; i += BATCH_SIZE) {
-    const batch = flattenedAlbums.slice(i, i + BATCH_SIZE);
-
-    const batchPromises = batch.map(async ({ group, album }) => {
-      const enriched: EnrichedAlbum = {
+      results.push({
         ...album,
         artist: group.artist,
         genre: group.genre,
         genre_style: group.genre_style,
         genreId: group.genreId,
-        artworkUrl: album.artworkUrl || FALLBACK_ARTWORK,
-        previewUrl: null,
+        artworkUrl: cached?.artworkUrl || album.artworkUrl || FALLBACK_ARTWORK,
+        previewUrl: cached?.previewUrl || null,
         itunesLink: album.itunesLink || null,
-        id: `${group.artist}-${album.title}`.replace(/\s+/g, '-').toLowerCase(),
-      };
+        id,
+      });
+    }
+  }
 
-      // Only fetch preview URL (streaming) from iTunes API
+  return results.sort((a, b) => a.year - b.year);
+}
+
+// --- Phase 2: Progressive preview URL fetching ---
+
+const BATCH_SIZE = 10;
+const BATCH_DELAY = 200;
+
+export async function fetchPreviewUrls(
+  albums: EnrichedAlbum[],
+  onBatchReady: (updated: Map<string, { previewUrl: string; artworkUrl?: string }>) => void,
+): Promise<void> {
+  // Filter to albums that still need a preview URL
+  const needsFetch = albums.filter(a => !a.previewUrl);
+  if (needsFetch.length === 0) return;
+
+  for (let i = 0; i < needsFetch.length; i += BATCH_SIZE) {
+    const batch = needsFetch.slice(i, i + BATCH_SIZE);
+    const updates = new Map<string, { previewUrl: string; artworkUrl?: string }>();
+
+    const batchPromises = batch.map(async (album) => {
+      const cacheKey = `${album.artist}::${album.key_track}`;
+
       try {
-        const trackQuery = `${group.artist} ${album.key_track}`;
+        const trackQuery = `${album.artist} ${album.key_track}`;
         const trackRes = await fetchWithRetry(
           `https://itunes.apple.com/search?term=${encodeURIComponent(trackQuery)}&entity=song&limit=1`
         );
         const trackData = await trackRes.json();
-        if (trackData.resultCount > 0) {
-          enriched.previewUrl = trackData.results[0].previewUrl;
 
-          // If artwork is missing locally, grab it from the track result
-          if (!album.artworkUrl && trackData.results[0].artworkUrl100) {
-            enriched.artworkUrl = trackData.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+        if (trackData.resultCount > 0) {
+          const previewUrl = trackData.results[0].previewUrl;
+          let artworkUrl: string | undefined;
+
+          if (!album.artworkUrl?.includes('itunes') && trackData.results[0].artworkUrl100) {
+            artworkUrl = trackData.results[0].artworkUrl100.replace('100x100bb', '600x600bb');
+          }
+
+          if (previewUrl) {
+            setCachedPreview(cacheKey, previewUrl, artworkUrl);
+            updates.set(album.id, { previewUrl, artworkUrl });
           }
         }
       } catch (e) {
         console.warn(`Track fetch failed for ${album.title}`, e);
       }
-
-      return enriched;
     });
 
-    const batchResults = await Promise.all(batchPromises);
-    results.push(...batchResults);
+    await Promise.all(batchPromises);
 
-    if (i + BATCH_SIZE < flattenedAlbums.length) {
-      await delay(500);
+    if (updates.size > 0) {
+      onBatchReady(updates);
+    }
+
+    if (i + BATCH_SIZE < needsFetch.length) {
+      await delay(BATCH_DELAY);
     }
   }
+}
 
-  return results.sort((a, b) => a.year - b.year);
+// --- Legacy: blocking fetch (kept for compatibility) ---
+
+export const fetchEnrichedAlbums = async (genreId?: GenreId): Promise<EnrichedAlbum[]> => {
+  const albums = getLocalAlbums(genreId);
+  await fetchPreviewUrls(albums, (updates) => {
+    for (const album of albums) {
+      const update = updates.get(album.id);
+      if (update) {
+        album.previewUrl = update.previewUrl;
+        if (update.artworkUrl) album.artworkUrl = update.artworkUrl;
+      }
+    }
+  });
+  return albums;
 };
