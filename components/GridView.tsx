@@ -4,7 +4,7 @@ import AlbumCard from './AlbumCard';
 
 interface GridViewProps {
   albums: EnrichedAlbum[];
-  onPlay: (url: string, style: 'thunder' | 'cloud') => void;
+  onPlay: (url: string, style: 'thunder' | 'cloud', albumId: string, artworkUrl: string) => void;
   onStop: () => void;
   activeId: string | null;
 }

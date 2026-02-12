@@ -1,5 +1,6 @@
-import { ALBUMS_DATA } from '../constants';
+import { ALBUMS_DATA, getAlbumsByGenre } from '../constants';
 import { EnrichedAlbum } from '../types';
+import { GenreId } from '../genre-config';
 
 const FALLBACK_ARTWORK = 'https://picsum.photos/600/600?grayscale';
 
@@ -19,10 +20,11 @@ const fetchWithRetry = async (url: string, retries = 2) => {
   throw new Error('All retries failed');
 };
 
-export const fetchEnrichedAlbums = async (): Promise<EnrichedAlbum[]> => {
+export const fetchEnrichedAlbums = async (genreId?: GenreId): Promise<EnrichedAlbum[]> => {
+  const sourceData = genreId ? getAlbumsByGenre(genreId) : ALBUMS_DATA;
   const flattenedAlbums = [];
 
-  for (const group of ALBUMS_DATA) {
+  for (const group of sourceData) {
     for (const album of group.albums) {
       flattenedAlbums.push({ group, album });
     }
@@ -40,6 +42,7 @@ export const fetchEnrichedAlbums = async (): Promise<EnrichedAlbum[]> => {
         artist: group.artist,
         genre: group.genre,
         genre_style: group.genre_style,
+        genreId: group.genreId,
         artworkUrl: album.artworkUrl || FALLBACK_ARTWORK,
         previewUrl: null,
         itunesLink: album.itunesLink || null,

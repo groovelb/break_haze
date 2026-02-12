@@ -1,4 +1,6 @@
-export type GenreStyle = 'thunder' | 'cloud';
+import { GenreId, VisualizerMode } from './genre-config';
+
+export type GenreStyle = VisualizerMode;
 
 export interface RawAlbumData {
   year: number;
@@ -13,6 +15,7 @@ export interface ArtistGroup {
   artist: string;
   genre: string;
   genre_style: GenreStyle;
+  genreId: GenreId;
   albums: RawAlbumData[];
 }
 
@@ -20,10 +23,11 @@ export interface EnrichedAlbum extends RawAlbumData {
   artist: string;
   genre: string;
   genre_style: GenreStyle;
+  genreId: GenreId;
   artworkUrl: string;
   previewUrl: string | null;
   itunesLink: string | null;
-  id: string; // Unique ID for keying
+  id: string;
 }
 
 export interface AudioContextState {

@@ -1,4 +1,5 @@
 import { ArtistGroup } from './types';
+import { GenreId } from './genre-config';
 
 export const ALBUMS_DATA: ArtistGroup[] = [
   // ═══════════════════════════════════════════
@@ -8,6 +9,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Bomb the Bass",
     "genre": "Sample-Based Breakbeat",
     "genre_style": "thunder",
+    "genreId": "big-beat",
     "albums": [
       {
         "year": 1988,
@@ -23,6 +25,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Coldcut",
     "genre": "Sample-Based Breakbeat",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1989,
@@ -38,6 +41,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Soul II Soul",
     "genre": "Proto-Trip-Hop",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1989,
@@ -53,6 +57,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Beats International",
     "genre": "Breakbeat",
     "genre_style": "thunder",
+    "genreId": "big-beat",
     "albums": [
       {
         "year": 1990,
@@ -72,6 +77,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Massive Attack",
     "genre": "Trip-hop",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1991,
@@ -119,6 +125,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Portishead",
     "genre": "Trip-hop",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1994,
@@ -150,6 +157,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "The Prodigy",
     "genre": "Big Beat",
     "genre_style": "thunder",
+    "genreId": "big-beat",
     "albums": [
       {
         "year": 1992,
@@ -189,6 +197,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "The Chemical Brothers",
     "genre": "Big Beat",
     "genre_style": "thunder",
+    "genreId": "big-beat",
     "albums": [
       {
         "year": 1995,
@@ -236,6 +245,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Tricky",
     "genre": "Trip-hop",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1995,
@@ -259,6 +269,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Leftfield",
     "genre": "Progressive Breakbeat",
     "genre_style": "thunder",
+    "genreId": "big-beat",
     "albums": [
       {
         "year": 1995,
@@ -274,6 +285,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Nightmares on Wax",
     "genre": "Downtempo",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1995,
@@ -289,6 +301,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Fatboy Slim",
     "genre": "Big Beat",
     "genre_style": "thunder",
+    "genreId": "big-beat",
     "albums": [
       {
         "year": 1996,
@@ -320,6 +333,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Hooverphonic",
     "genre": "Trip-hop / Dream Pop",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1996,
@@ -335,6 +349,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "DJ Shadow",
     "genre": "Trip-hop / Instrumental",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1996,
@@ -366,6 +381,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "The Crystal Method",
     "genre": "Big Beat",
     "genre_style": "thunder",
+    "genreId": "big-beat",
     "albums": [
       {
         "year": 1997,
@@ -389,6 +405,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Amon Tobin",
     "genre": "Breakbeat / Trip-Hop",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1997,
@@ -404,6 +421,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Morcheeba",
     "genre": "Trip-hop",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1996,
@@ -427,6 +445,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Sneaker Pimps",
     "genre": "Trip-hop",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1996,
@@ -450,6 +469,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Lo Fidelity Allstars",
     "genre": "Big Beat",
     "genre_style": "thunder",
+    "genreId": "big-beat",
     "albums": [
       {
         "year": 1998,
@@ -465,6 +485,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Air",
     "genre": "Downtempo / Electronic",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1998,
@@ -480,6 +501,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Kruder & Dorfmeister",
     "genre": "Downtempo / Dub",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1998,
@@ -495,6 +517,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Propellerheads",
     "genre": "Big Beat",
     "genre_style": "thunder",
+    "genreId": "big-beat",
     "albums": [
       {
         "year": 1998,
@@ -510,6 +533,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "UNKLE",
     "genre": "Trip-hop / Alternative",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1998,
@@ -525,6 +549,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Lamb",
     "genre": "Trip-hop / Drum and Bass",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 1999,
@@ -540,6 +565,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Groove Armada",
     "genre": "Big Beat / House",
     "genre_style": "thunder",
+    "genreId": "big-beat",
     "albums": [
       {
         "year": 1999,
@@ -563,6 +589,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Thievery Corporation",
     "genre": "Downtempo / Trip-Hop",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 2000,
@@ -578,6 +605,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Gorillaz",
     "genre": "Genre Blending",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 2001,
@@ -601,6 +629,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Zero 7",
     "genre": "Downtempo",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 2001,
@@ -616,6 +645,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "RJD2",
     "genre": "Instrumental Hip-Hop",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 2002,
@@ -631,6 +661,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Bonobo",
     "genre": "Downtempo",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 2003,
@@ -654,6 +685,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Wax Tailor",
     "genre": "Trip-Hop / Cinematic",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 2005,
@@ -673,6 +705,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     "artist": "Little Dragon",
     "genre": "Trip-Hop / Synth Pop",
     "genre_style": "cloud",
+    "genreId": "trip-hop",
     "albums": [
       {
         "year": 2011,
@@ -685,3 +718,7 @@ export const ALBUMS_DATA: ArtistGroup[] = [
     ]
   }
 ];
+
+export function getAlbumsByGenre(genreId: GenreId): ArtistGroup[] {
+  return ALBUMS_DATA.filter(g => g.genreId === genreId);
+}

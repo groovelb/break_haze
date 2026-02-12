@@ -1,8 +1,9 @@
 import React, { useLayoutEffect, useRef, useMemo, useCallback, useState, useEffect } from 'react';
 import { EnrichedAlbum } from '../types';
+import { GenreConfig } from '../genre-config';
 import AlbumCard from './AlbumCard';
 import { ColorPalette } from '../utils/color-extract';
-import { getVerticalOffset, classifyGenreZone, ZONE_COLORS } from '../utils/genre';
+import { getVerticalOffset, getZoneColor } from '../utils/genre';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
@@ -10,13 +11,14 @@ gsap.registerPlugin(ScrollTrigger);
 
 interface TimelineProps {
   albums: EnrichedAlbum[];
-  onPlay: (url: string, style: 'thunder' | 'cloud') => void;
+  onPlay: (url: string, style: 'thunder' | 'cloud', albumId: string, artworkUrl: string) => void;
   onStop: () => void;
   activeId: string | null;
   activeColors: ColorPalette | null;
+  genreConfig?: GenreConfig;
 }
 
-const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, activeColors }) => {
+const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, activeColors, genreConfig }) => {
   const sectionRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const ctxRef = useRef<gsap.Context | null>(null);
@@ -64,7 +66,7 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
     };
   }, [albums]);
 
-  // Unique sorted years that actually have albums — even spacing, no dead gaps
+  // Unique sorted years that actually have albums
   const activeYears = useMemo(() => {
     const years = albums.map(a => a.year);
     return [...new Set<number>(years)].sort((a, b) => a - b);
@@ -84,6 +86,11 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
     });
   }, [activeYears, albums, albumPercent]);
 
+  // Resolve zones from genreConfig or fallback
+  const zones = genreConfig?.zones;
+  const topZoneColor = zones?.[0]?.color.primary || '#a855f7';
+  const bottomZoneColor = zones?.[zones.length - 1]?.color.primary || '#ccff00';
+
   return (
     <section ref={sectionRef} className="relative w-full h-screen overflow-hidden">
 
@@ -98,35 +105,51 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
 
       {/* Genre Zone Gradients (desktop only) */}
       <div className="absolute inset-0 z-[5] pointer-events-none hidden md:block">
-        <div className="absolute top-0 left-0 w-full h-2/5" style={{ background: 'linear-gradient(to bottom, rgba(36,0,70,0.12), transparent)' }} />
-        <div className="absolute bottom-40 left-0 w-full h-2/5" style={{ background: 'linear-gradient(to top, rgba(204,255,0,0.04), transparent)' }} />
+        <div className="absolute top-0 left-0 w-full h-2/5" style={{ background: `linear-gradient(to bottom, ${topZoneColor}1F, transparent)` }} />
+        <div className="absolute bottom-40 left-0 w-full h-2/5" style={{ background: `linear-gradient(to top, ${bottomZoneColor}0A, transparent)` }} />
       </div>
 
-      {/* ═══ Centered Content Wrapper ═══ */}
+      {/* Centered Content Wrapper */}
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-[600px] md:h-[800px]">
 
-        {/* Y-Axis: Frequency Spectrum Indicator (desktop only) */}
+        {/* Y-Axis: Zone Indicator (desktop only) */}
         <div className="absolute left-5 top-0 bottom-0 z-20 pointer-events-none hidden md:block">
           {/* Vertical gradient bar */}
-          <div className="absolute top-[60px] bottom-[360px] w-px" style={{ background: 'linear-gradient(to bottom, #a855f7 0%, rgba(255,255,255,0.15) 50%, #ccff00 100%)' }} />
+          <div
+            className="absolute top-[60px] bottom-[360px] w-px"
+            style={{ background: `linear-gradient(to bottom, ${topZoneColor} 0%, rgba(255,255,255,0.15) 50%, ${bottomZoneColor} 100%)` }}
+          />
 
-          {/* Cloud zone label */}
-          <div className="absolute flex items-center gap-2" style={{ top: 100 }}>
-            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#a855f7', boxShadow: '0 0 6px rgba(168,85,247,0.5)' }} />
-            <span className="text-[8px] font-mono tracking-[0.2em] whitespace-nowrap" style={{ color: 'rgba(168,85,247,0.5)' }}>CLOUD</span>
-          </div>
-
-          {/* Crossover zone label */}
-          <div className="absolute flex items-center gap-2" style={{ top: 250 }}>
-            <div className="w-1.5 h-1.5 rounded-full bg-white/30" />
-            <span className="text-[8px] font-mono tracking-[0.2em] text-white/25 whitespace-nowrap">CROSS</span>
-          </div>
-
-          {/* Thunder zone label */}
-          <div className="absolute flex items-center gap-2" style={{ top: 400 }}>
-            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#ccff00', boxShadow: '0 0 6px rgba(204,255,0,0.4)' }} />
-            <span className="text-[8px] font-mono tracking-[0.2em] whitespace-nowrap" style={{ color: 'rgba(204,255,0,0.4)' }}>THUNDER</span>
-          </div>
+          {/* Dynamic zone labels */}
+          {zones ? zones.map((zone) => (
+            <div key={zone.id} className="absolute flex items-center gap-2" style={{ top: zone.center }}>
+              <div
+                className="w-1.5 h-1.5 rounded-full"
+                style={{ backgroundColor: zone.color.primary, boxShadow: `0 0 6px ${zone.color.glow}` }}
+              />
+              <span
+                className="text-[8px] font-mono tracking-[0.2em] whitespace-nowrap"
+                style={{ color: `${zone.color.primary}80` }}
+              >
+                {zone.label}
+              </span>
+            </div>
+          )) : (
+            <>
+              <div className="absolute flex items-center gap-2" style={{ top: 100 }}>
+                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#a855f7', boxShadow: '0 0 6px rgba(168,85,247,0.5)' }} />
+                <span className="text-[8px] font-mono tracking-[0.2em] whitespace-nowrap" style={{ color: 'rgba(168,85,247,0.5)' }}>CLOUD</span>
+              </div>
+              <div className="absolute flex items-center gap-2" style={{ top: 250 }}>
+                <div className="w-1.5 h-1.5 rounded-full bg-white/30" />
+                <span className="text-[8px] font-mono tracking-[0.2em] text-white/25 whitespace-nowrap">CROSS</span>
+              </div>
+              <div className="absolute flex items-center gap-2" style={{ top: 400 }}>
+                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: '#ccff00', boxShadow: '0 0 6px rgba(204,255,0,0.4)' }} />
+                <span className="text-[8px] font-mono tracking-[0.2em] whitespace-nowrap" style={{ color: 'rgba(204,255,0,0.4)' }}>THUNDER</span>
+              </div>
+            </>
+          )}
 
           {/* Axis title */}
           <div className="absolute -left-1 top-[200px]">
@@ -140,7 +163,7 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
           className="flex items-center md:items-start h-full px-[10vw] relative z-10 will-change-transform"
         >
           {albums.map((album) => {
-            const yOffset = isMobile ? 0 : getVerticalOffset(album);
+            const yOffset = isMobile ? 0 : getVerticalOffset(album, genreConfig);
             return (
               <div
                 key={album.id}
@@ -161,8 +184,8 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
 
       {/* Instructions */}
       <div className="absolute bottom-32 left-10 md:left-20 z-40 text-xs font-mono text-gray-500 pointer-events-none">
-         <p>SCROLL <span className="text-acid-yellow">↓</span></p>
-         <p>HOVER <span className="text-neon-pink">●</span></p>
+         <p>SCROLL <span style={{ color: genreConfig?.colors.primary || '#ccff00' }}>&#x2193;</span></p>
+         <p>HOVER <span style={{ color: genreConfig?.colors.secondary || '#ff0099' }}>&#x25CF;</span></p>
       </div>
 
       {/* BOTTOM VISUAL TIMELINE */}
@@ -187,10 +210,9 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
               {albums.map((album, index) => {
                   const percent = albumPercent(index);
                   const isActive = activeId === album.id;
-                  const zone = classifyGenreZone(album);
-                  const zoneColor = ZONE_COLORS[zone];
+                  const zoneColor = getZoneColor(album, genreConfig);
                   const accentColor = isActive && activeColors ? activeColors.primary : undefined;
-                  const connectorHeight = zone === 'cloud' ? 40 : zone === 'crossover' ? 28 : 16;
+                  const connectorHeight = 28;
 
                   return (
                       <div
@@ -224,7 +246,7 @@ const Timeline: React.FC<TimelineProps> = ({ albums, onPlay, onStop, activeId, a
                                 className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap"
                                 style={{
                                   bottom: 10 + connectorHeight,
-                                  color: accentColor || '#facc15',
+                                  color: accentColor || genreConfig?.colors.primary || '#facc15',
                                 }}
                               >
                                   <p className="text-[9px] font-mono leading-tight text-center">{album.artist}</p>

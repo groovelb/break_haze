@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { EnrichedAlbum } from '../types';
-import { classifyGenreZone, ZONE_COLORS } from '../utils/genre';
+import { getZoneColor } from '../utils/genre';
 
 interface Ripple {
   x: number;
@@ -13,7 +13,7 @@ interface Ripple {
 
 interface AlbumCardProps {
   album: EnrichedAlbum;
-  onPlay: (url: string, style: 'thunder' | 'cloud') => void;
+  onPlay: (url: string, style: 'thunder' | 'cloud', albumId: string, artworkUrl: string) => void;
   onStop: () => void;
   activeId: string | null;
   variant?: 'timeline' | 'grid';
@@ -27,8 +27,7 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album, onPlay, onStop, activeId, 
   const intervalRef = useRef<ReturnType<typeof setInterval>>();
   const [isHovered, setIsHovered] = useState(false);
   const isActive = activeId === album.id;
-  const zone = useMemo(() => classifyGenreZone(album), [album]);
-  const zoneColor = ZONE_COLORS[zone];
+  const zoneColor = useMemo(() => getZoneColor(album), [album]);
 
   const spawnRipple = useCallback((canvas: HTMLCanvasElement) => {
     const cx = canvas.width / 2;
@@ -104,7 +103,7 @@ const AlbumCard: React.FC<AlbumCardProps> = ({ album, onPlay, onStop, activeId, 
   const handleMouseEnter = () => {
     setIsHovered(true);
     if (album.previewUrl) {
-      onPlay(album.previewUrl, album.genre_style);
+      onPlay(album.previewUrl, album.genre_style, album.id, album.artworkUrl);
     }
   };
 
