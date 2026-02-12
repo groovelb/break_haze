@@ -23,7 +23,9 @@ export function classifyGenreZone(album: EnrichedAlbum): GenreZone {
     if (hasThunder && hasCloud) return 'crossover';
   }
 
-  return album.genre_style;
+  const style = album.genre_style;
+  if (style === 'thunder' || style === 'cloud') return style;
+  return 'crossover'; // fallback for non-legacy modes (e.g. 'boom')
 }
 
 // GenreConfig-based zone classification

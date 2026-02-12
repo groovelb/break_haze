@@ -6,9 +6,10 @@ export type GenreId =
   | 'jungle-dnb'
   | 'ambient-idm'
   | 'trance'
-  | 'breakbeat-hardcore';
+  | 'breakbeat-hardcore'
+  | 'boombap';
 
-export type VisualizerMode = 'thunder' | 'cloud';
+export type VisualizerMode = 'thunder' | 'cloud' | 'boom';
 
 export interface GenreColors {
   primary: string;
@@ -234,6 +235,44 @@ export const GENRE_CONFIGS: Record<GenreId, GenreConfig> = {
       { id: 'gabber', label: 'GABBER', center: 400, color: { primary: '#cc0066', glow: 'rgba(204,0,102,0.3)', faded: 'rgba(204,0,102,0.15)' }, matchTerms: ['gabber', 'industrial hardcore'] },
     ],
   },
+  'boombap': {
+    id: 'boombap',
+    name: 'Boombap',
+    tagline: 'DRUM BREAK SCRIPTURE',
+    era: '1988 - Present',
+    visualizerMode: 'boom',
+    colors: {
+      primary: '#8B0000',
+      secondary: '#CD853F',
+      glow: 'rgba(139,0,0,0.3)',
+      faded: 'rgba(139,0,0,0.05)',
+      gradient: 'linear-gradient(135deg, #1a0000 0%, #3d0000 40%, #0a0a0a 100%)',
+      bgTint: 'rgba(139,0,0,0.02)',
+    },
+    zones: [
+      {
+        id: 'east',
+        label: 'EAST',
+        center: 100,
+        color: { primary: '#8B0000', glow: 'rgba(139,0,0,0.3)', faded: 'rgba(139,0,0,0.15)' },
+        matchTerms: ['boom-bap', 'east coast', 'hardcore rap', 'nyc rap', 'boom bap'],
+      },
+      {
+        id: 'soul',
+        label: 'SOUL',
+        center: 250,
+        color: { primary: '#CD853F', glow: 'rgba(205,133,63,0.3)', faded: 'rgba(205,133,63,0.15)' },
+        matchTerms: ['jazz rap', 'conscious', 'soulful', 'neo-soul', 'conscious rap'],
+      },
+      {
+        id: 'ug',
+        label: 'UG',
+        center: 400,
+        color: { primary: '#4A0404', glow: 'rgba(74,4,4,0.3)', faded: 'rgba(74,4,4,0.15)' },
+        matchTerms: ['underground', 'abstract', 'experimental', 'lo-fi', 'abstract hip-hop'],
+      },
+    ],
+  },
 };
 
 export function getGenreConfig(id: GenreId): GenreConfig {
@@ -247,6 +286,7 @@ export function getAllGenres(): GenreConfig[] {
 export const GENRE_ORDER: GenreId[] = [
   'big-beat',
   'trip-hop',
+  'boombap',
   'acid-house',
   'uk-garage',
   'jungle-dnb',

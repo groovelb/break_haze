@@ -716,6 +716,402 @@ export const ALBUMS_DATA: ArtistGroup[] = [
         "itunesLink": null
       }
     ]
+  },
+
+  // ═══════════════════════════════════════════
+  //  BOOMBAP RAP — DRUM BREAK SCRIPTURE
+  // ═══════════════════════════════════════════
+  {
+    "artist": "Eric B. & Rakim",
+    "genre": "Boom-Bap",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1987,
+        "title": "Paid in Full",
+        "key_track": "Paid in Full",
+        "search_query": "Eric B Rakim Paid in Full",
+        "artworkUrl": null,
+        "itunesLink": null
+      },
+      {
+        "year": 1988,
+        "title": "Follow the Leader",
+        "key_track": "Follow the Leader",
+        "search_query": "Eric B Rakim Follow the Leader",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "De La Soul",
+    "genre": "Jazz Rap",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1989,
+        "title": "3 Feet High and Rising",
+        "key_track": "Me Myself and I",
+        "search_query": "De La Soul Me Myself and I",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "A Tribe Called Quest",
+    "genre": "Jazz Rap",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1990,
+        "title": "People's Instinctive Travels and the Paths of Rhythm",
+        "key_track": "Can I Kick It?",
+        "search_query": "A Tribe Called Quest Can I Kick It",
+        "artworkUrl": null,
+        "itunesLink": null
+      },
+      {
+        "year": 1991,
+        "title": "The Low End Theory",
+        "key_track": "Scenario",
+        "search_query": "A Tribe Called Quest Scenario",
+        "artworkUrl": null,
+        "itunesLink": null
+      },
+      {
+        "year": 1993,
+        "title": "Midnight Marauders",
+        "key_track": "Award Tour",
+        "search_query": "A Tribe Called Quest Award Tour",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Gang Starr",
+    "genre": "East Coast",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1991,
+        "title": "Step in the Arena",
+        "key_track": "Just to Get a Rep",
+        "search_query": "Gang Starr Just to Get a Rep",
+        "artworkUrl": null,
+        "itunesLink": null
+      },
+      {
+        "year": 1998,
+        "title": "Moment of Truth",
+        "key_track": "Moment of Truth",
+        "search_query": "Gang Starr Moment of Truth",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Pete Rock & CL Smooth",
+    "genre": "Jazz Rap",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1992,
+        "title": "Mecca and the Soul Brother",
+        "key_track": "They Reminisce Over You",
+        "search_query": "Pete Rock CL Smooth They Reminisce Over You",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Wu-Tang Clan",
+    "genre": "East Coast",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1993,
+        "title": "Enter the Wu-Tang (36 Chambers)",
+        "key_track": "C.R.E.A.M.",
+        "search_query": "Wu-Tang Clan C.R.E.A.M.",
+        "artworkUrl": null,
+        "itunesLink": null
+      },
+      {
+        "year": 1997,
+        "title": "Wu-Tang Forever",
+        "key_track": "Triumph",
+        "search_query": "Wu-Tang Clan Triumph",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Nas",
+    "genre": "East Coast",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1994,
+        "title": "Illmatic",
+        "key_track": "N.Y. State of Mind",
+        "search_query": "Nas N.Y. State of Mind",
+        "artworkUrl": null,
+        "itunesLink": null
+      },
+      {
+        "year": 1996,
+        "title": "It Was Written",
+        "key_track": "If I Ruled the World",
+        "search_query": "Nas If I Ruled the World",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "The Notorious B.I.G.",
+    "genre": "East Coast",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1994,
+        "title": "Ready to Die",
+        "key_track": "Juicy",
+        "search_query": "Notorious B.I.G. Juicy",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Mobb Deep",
+    "genre": "Hardcore Rap",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1995,
+        "title": "The Infamous",
+        "key_track": "Shook Ones Part II",
+        "search_query": "Mobb Deep Shook Ones Part II",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "GZA",
+    "genre": "East Coast",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1995,
+        "title": "Liquid Swords",
+        "key_track": "Liquid Swords",
+        "search_query": "GZA Liquid Swords",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "The Roots",
+    "genre": "Conscious Rap",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1996,
+        "title": "Illadelph Halflife",
+        "key_track": "Clones",
+        "search_query": "The Roots Clones Illadelph Halflife",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Mos Def",
+    "genre": "Conscious Rap",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1999,
+        "title": "Black on Both Sides",
+        "key_track": "Mathematics",
+        "search_query": "Mos Def Mathematics",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "MF DOOM",
+    "genre": "Abstract Hip-Hop",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 1999,
+        "title": "Operation: Doomsday",
+        "key_track": "Rhymes Like Dimes",
+        "search_query": "MF DOOM Rhymes Like Dimes",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Madvillain",
+    "genre": "Abstract Hip-Hop",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 2004,
+        "title": "Madvillainy",
+        "key_track": "Accordion",
+        "search_query": "Madvillain Accordion",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "J Dilla",
+    "genre": "Underground",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 2006,
+        "title": "Donuts",
+        "key_track": "Workinonit",
+        "search_query": "J Dilla Workinonit",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Roc Marciano",
+    "genre": "Underground",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 2010,
+        "title": "Marcberg",
+        "key_track": "Snow",
+        "search_query": "Roc Marciano Snow",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Freddie Gibbs & Madlib",
+    "genre": "Underground",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 2014,
+        "title": "Pinata",
+        "key_track": "Thuggin",
+        "search_query": "Freddie Gibbs Madlib Thuggin",
+        "artworkUrl": null,
+        "itunesLink": null
+      },
+      {
+        "year": 2019,
+        "title": "Bandana",
+        "key_track": "Crime Pays",
+        "search_query": "Freddie Gibbs Madlib Crime Pays",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Joey Bada$$",
+    "genre": "East Coast",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 2015,
+        "title": "B4.DA.$$",
+        "key_track": "Paper Trail$",
+        "search_query": "Joey Bada$$ Paper Trail$",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Westside Gunn",
+    "genre": "East Coast",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 2020,
+        "title": "Pray for Paris",
+        "key_track": "327",
+        "search_query": "Westside Gunn 327",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Conway the Machine",
+    "genre": "Hardcore Rap",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 2020,
+        "title": "From King to a God",
+        "key_track": "Front Lines",
+        "search_query": "Conway the Machine Front Lines",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
+  },
+  {
+    "artist": "Boldy James & The Alchemist",
+    "genre": "Underground",
+    "genre_style": "boom",
+    "genreId": "boombap",
+    "albums": [
+      {
+        "year": 2021,
+        "title": "Bo Jackson",
+        "key_track": "First 48 Freestyle",
+        "search_query": "Boldy James Alchemist First 48",
+        "artworkUrl": null,
+        "itunesLink": null
+      }
+    ]
   }
 ];
 

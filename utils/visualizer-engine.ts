@@ -1,7 +1,7 @@
 import { createNoise2D } from './simplex-noise';
 import { ColorPalette } from './color-extract';
 
-type Mode = 'thunder' | 'cloud';
+type Mode = 'thunder' | 'cloud' | 'boom';
 
 // --- Audio Bands (128 bins from fftSize=256) ---
 const BAND_SUB_BASS: [number, number] = [0, 8];
@@ -240,9 +240,9 @@ export class VisualizerEngine {
 
     const bassNow = this.smoothBands.bass + this.smoothBands.subBass;
     const bassPrev = this.prevBass + this.smoothBands.subBass * 0.8;
-    const isThunder = this.mode === 'thunder';
-    const threshold = isThunder ? 0.30 : 0.40;
-    const cooldown = isThunder ? 0.06 : 0.10;
+    const isHighEnergy = this.mode === 'thunder' || this.mode === 'boom';
+    const threshold = this.mode === 'boom' ? 0.25 : isHighEnergy ? 0.30 : 0.40;
+    const cooldown = this.mode === 'boom' ? 0.04 : isHighEnergy ? 0.06 : 0.10;
 
     if (bassNow > threshold && bassNow > bassPrev * 1.12 &&
         this.time - this.lastBassHitTime > cooldown) {
@@ -256,8 +256,11 @@ export class VisualizerEngine {
 
     const cx = this.w * 0.5;
     const cy = this.h * 0.55;
+    const isBoom = this.mode === 'boom';
     const isThunder = this.mode === 'thunder';
-    const maxR = Math.min(this.w, this.h) * (0.25 + intensity * 0.4);
+    const maxR = isBoom
+      ? Math.min(this.w, this.h) * (0.18 + intensity * 0.25)
+      : Math.min(this.w, this.h) * (0.25 + intensity * 0.4);
 
     // Alternate primary/secondary color
     const ci = this.ringColorToggle % 2;
@@ -268,14 +271,26 @@ export class VisualizerEngine {
       y: cy,
       radius: 5,
       maxRadius: maxR,
-      alpha: isThunder ? 0.25 + intensity * 0.15 : 0.12 + intensity * 0.12,
-      lineWidth: isThunder ? 2 + intensity * 2.5 : 1 + intensity * 1.5,
-      speed: isThunder ? 4 + intensity * 6 : 2 + intensity * 4,
+      alpha: isBoom ? 0.35 + intensity * 0.20 : isThunder ? 0.25 + intensity * 0.15 : 0.12 + intensity * 0.12,
+      lineWidth: isBoom ? 3 + intensity * 3 : isThunder ? 2 + intensity * 2.5 : 1 + intensity * 1.5,
+      speed: isBoom ? 8 + intensity * 8 : isThunder ? 4 + intensity * 6 : 2 + intensity * 4,
       color: this.paletteRgb[ci],
     });
 
-    // Thunder: second ring with delay feel
-    if (isThunder && intensity > 0.45) {
+    // Boom: double ring on snare hits (lower threshold than thunder)
+    if (isBoom && intensity > 0.35) {
+      this.rings.push({
+        x: cx,
+        y: cy,
+        radius: 2,
+        maxRadius: maxR * 0.5,
+        alpha: 0.20 + intensity * 0.12,
+        lineWidth: 2 + intensity * 1.5,
+        speed: 10 + intensity * 6,
+        color: this.paletteRgb[1 - ci],
+      });
+    } else if (isThunder && intensity > 0.45) {
+      // Thunder: second ring with delay feel
       this.rings.push({
         x: cx,
         y: cy,
@@ -306,8 +321,7 @@ export class VisualizerEngine {
   private updateDust() {
     if (!this.dustInited) return;
 
-    const isThunder = this.mode === 'thunder';
-    const impulseMult = isThunder ? 2.0 : 1.0;
+    const impulseMult = this.mode === 'boom' ? 2.5 : this.mode === 'thunder' ? 2.0 : 1.0;
     const nRings = this.rings.length;
     const t = this.time;
 
@@ -365,7 +379,7 @@ export class VisualizerEngine {
 
     // Clear with slight trail for ring afterglow
     const clearAlpha = this.isPlaying
-      ? (this.mode === 'thunder' ? 0.18 : 0.10)
+      ? (this.mode === 'boom' ? 0.22 : this.mode === 'thunder' ? 0.18 : 0.10)
       : 0.04;
     ctx.fillStyle = `rgba(0,0,0,${clearAlpha})`;
     ctx.fillRect(0, 0, this.w, this.h);

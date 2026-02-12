@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { GENRE_ORDER, getGenreConfig, GenreId } from '../genre-config';
 import GenreCard from '../components/GenreCard';
 
-const GENRES_WITH_DATA: Set<GenreId> = new Set(['big-beat', 'trip-hop']);
+const GENRES_WITH_DATA: Set<GenreId> = new Set(['big-beat', 'trip-hop', 'boombap']);
 
 interface LandingPageProps {
   onInitAudio: () => void;
